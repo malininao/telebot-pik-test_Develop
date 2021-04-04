@@ -3,15 +3,16 @@ from telebot import types
 from config import TOKEN
 from data_functions import getData
 import img_download as img_d
+from flask import Flask, request
 import logging
-#import time
+#import timegit
 
 #не забуд прописать в терминал команду pip install pytelegrambotapi (если у тебя мак то pip3, а не pip)
 
 bot = telebot.TeleBot(TOKEN)
 #это глвное меню бота (вызывается из базы данных, формируется на основе ее значений)
 #функция заполняет клавиатуру которая генерируется из базы данных (только главное меню)
-telebot.logger.setLevel(logging.DEBUG)
+#telebot.logger.setLevel(logging.DEBUG)
 @bot.message_handler(commands=['start'])
 def start(message):
     # Подключаем данные из БД
@@ -49,8 +50,8 @@ def process_select_step(message, data):
         index = texts.index(message.text)
         table = nextStep[index]
         lastTable = lastStep[index]
-        print(str("t01" in nextStep))
-        print(str("t02" in nextStep))
+        print("Переход к финальной инструкции IT", str("t01" in nextStep))
+        print("Переход к финальной инструкции BIM", str("t02" in nextStep))
         if "t01" in nextStep or "t02" in nextStep or "t1" in nextStep: #если следующая таблица пустая то вызывается
             # функция в которой выводится текст инструкции
             instructionList=[]
@@ -105,9 +106,10 @@ def menu_select_step(message, data):
     markup = types.ReplyKeyboardMarkup(one_time_keyboard=True, resize_keyboard=True, row_width=2)  # переменная вызывает клавиатуру
     messageList = []
     for item in data:
-        itembtn = types.KeyboardButton(item[1])
+        if item[1] != "" and item[2] is not None and item[2] != "":
+            itembtn = types.KeyboardButton(item[1])
+            markup.add(itembtn)
         messageList.append(str(item[4]))
-        markup.add(itembtn)
     itemBtnBack = types.KeyboardButton('В НАЧАЛО')
     markup.add(itemBtnBack)
     msg = bot.send_message(message.chat.id,
@@ -121,29 +123,44 @@ def print_instruction_step(message, instruction, data, case, path):
     data = data
     if "C:\\" in path:
         count_of_img = img_d.countImg(path)
-        print(count_of_img)
-        print(path)
+        print(f"В папке {path}\n{count_of_img} файла")
         instruction_list = str(instruction).split("(рис)")
         try:
             if len(instruction_list) != count_of_img:
                 j = 0
                 for i in range(count_of_img):
                     img = open(path + f"\\{i + 1}.png", 'rb')
-                    bot.send_message(message.chat.id, instruction_list[j], disable_notification=True)
-                    bot.send_photo(message.chat.id, img, disable_notification=True)
+                    try:
+                        if len(instruction_list) != 1:
+                            bot.send_message(message.chat.id, instruction_list[j], disable_notification=True,
+                                         parse_mode="HTML")
+                            bot.send_photo(message.chat.id, img, disable_notification=True)
+                    except Exception as e:
+                        #bot.reply_to(message, "Ошибка инструкции")
+                        print(e)
+                        break
                     j = j + 1
-                bot.send_message(message.chat.id, instruction_list[j], disable_notification=True)
+                try:
+                    bot.send_message(message.chat.id, instruction_list[j], disable_notification=True, parse_mode="HTML")
+                except Exception as e:
+                    print(e)
 
             else:
                 for i in range(count_of_img):
                     img_path = path + f"\\{i + 1}.png"
                     print(img_path)
                     img = open(path + f"\\{i + 1}.png", 'rb')
-                    bot.send_message(message.chat.id, instruction_list[i], disable_notification=True)
-                    bot.send_photo(message.chat.id, img, disable_notification=True)
+                    try:
+                        bot.send_message(message.chat.id, instruction_list[i], disable_notification=True, parse_mode="HTML")
+                        bot.send_photo(message.chat.id, img, disable_notification=True)
+                    except Exception as e:
+                        #bot.reply_to(message, "Ошибка инструкции")
+                        print(e)
+                        break
         except Exception as e:
             print(str(e))
-            bot.reply_to(message, "Изображение отсутствует")
+            bot.reply_to(message, "Инструкция или изображение отсутствует")
+            main_menu_select_step(message)
     else:
         if instruction != "":
             bot.send_message(message.chat.id, instruction, parse_mode="HTML", disable_notification=True)
@@ -188,14 +205,16 @@ def final_process_select_step(message, data):
             bot.reply_to(message, 'Такого раздела пока нет')
             main_menu_select_step(message)
 
+#def error_polling(message):
+    #bot.send_message(message.chat.id, "Подключение восстановлено")
 
-
-#Не знаю что это но без этого не работает
 
 if __name__ == '__main__':
     try:
-        bot.get_updates(timeout=5)
-        bot.polling(none_stop=True, interval=0, timeout=5)
+        bot.get_updates(timeout=50)
+        bot.polling(none_stop=True, interval=0, timeout=50, long_polling_timeout=100)
+        pass
     except Exception as e:
         print(e)
+
 

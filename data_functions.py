@@ -1,6 +1,6 @@
 import sqlite3
 
-with sqlite3.connect('data.db',  check_same_thread=False) as db:
+with sqlite3.connect('L:\БИМБОТ обмен\data.db',  check_same_thread=False) as db:
     cursor = db.cursor()
 
 def getData(table):
