@@ -160,6 +160,7 @@ def print_instruction_step(message, instruction, data, case, path):
         except Exception as e:
             print(str(e))
             bot.reply_to(message, "Инструкция или изображение отсутствует")
+            bot.send_message(message.chat.id, instruction, parse_mode="HTML", disable_notification=True)
             main_menu_select_step(message)
     else:
         if instruction != "":
