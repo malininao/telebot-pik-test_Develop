@@ -121,7 +121,7 @@ def menu_select_step(message, data):
 
 def print_instruction_step(message, instruction, data, case, path):
     data = data
-    if "src" in path:
+    if "src1" in path:
         count_of_img = img_d.countImg(path)
         print(f"В папке {path}\n{count_of_img} файла")
         instruction_list = str(instruction).split("(рис)")
@@ -160,7 +160,7 @@ def print_instruction_step(message, instruction, data, case, path):
         except Exception as e:
             print(str(e))
             bot.reply_to(message, "Инструкция или изображение отсутствует")
-            bot.send_message(message.chat.id, instruction, parse_mode="HTML", disable_notification=True)
+            #bot.send_message(message.chat.id, instruction, parse_mode="HTML", disable_notification=True)
             main_menu_select_step(message)
     else:
         if instruction != "":
