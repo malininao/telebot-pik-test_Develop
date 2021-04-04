@@ -121,7 +121,7 @@ def menu_select_step(message, data):
 
 def print_instruction_step(message, instruction, data, case, path):
     data = data
-    if "C:\\" in path:
+    if "src" in path:
         count_of_img = img_d.countImg(path)
         print(f"В папке {path}\n{count_of_img} файла")
         instruction_list = str(instruction).split("(рис)")
