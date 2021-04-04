@@ -3,7 +3,7 @@ from telebot import types
 from config import TOKEN
 from data_functions import getData
 import img_download as img_d
-from flask import Flask, request
+#from flask import Flask, request
 import logging
 #import timegit
 
