@@ -1,6 +1,5 @@
 import telebot
 from telebot import types
-#from config import TOKEN
 import os
 from data_functions import getData
 import img_download as img_d
@@ -145,7 +144,6 @@ def print_instruction_step(message, instruction, data, case, path):
                     bot.send_message(message.chat.id, instruction_list[j], disable_notification=True, parse_mode="HTML")
                 except Exception as e:
                     print(e)
-
             else:
                 for i in range(count_of_img):
                     img_path = path + f"\\{i + 1}.png"
@@ -213,6 +211,9 @@ def final_process_select_step(message, data):
 
 if __name__ == '__main__':
     try:
+        #Сохраняет действия пользователя при перезапуске
+        bot.enable_save_next_step_handlers(delay=2)
+        bot.load_next_step_handlers()
         bot.get_updates(timeout=50)
         bot.polling(none_stop=True, interval=0, timeout=50, long_polling_timeout=100)
         pass
