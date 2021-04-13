@@ -212,8 +212,8 @@ def final_process_select_step(message, data):
 if __name__ == '__main__':
     try:
         #Сохраняет действия пользователя при перезапуске
-        bot.enable_save_next_step_handlers(delay=200)
-        bot.load_next_step_handlers()
+        #bot.enable_save_next_step_handlers(delay=200)
+        #bot.load_next_step_handlers()
         #bot.get_updates(timeout=50)
         bot.polling(none_stop=True, interval=0, timeout=50, long_polling_timeout=100)
         pass
