@@ -10,7 +10,7 @@ import logging
 
 #не забуд прописать в терминал команду pip install pytelegrambotapi (если у тебя мак то pip3, а не pip)
 HEROKU = os.environ.get('HEROKU')
-if HEROKU:
+if HEROKU == "True":
     TOKEN = os.environ.get('TOKEN')
 else:
     import config
@@ -226,5 +226,11 @@ if __name__ == '__main__':
         pass
     except Exception as e:
         print(e)
-
+#Команды Git
+"""
+git add .
+git commit -m "*"
+git push 
+git push heroku main
+"""
 
