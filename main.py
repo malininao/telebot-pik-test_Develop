@@ -3,12 +3,18 @@ from telebot import types
 import os
 from data_functions import getData
 import img_download as img_d
+import config
 #from flask import Flask, request
 import logging
 #import timegit
 
 #не забуд прописать в терминал команду pip install pytelegrambotapi (если у тебя мак то pip3, а не pip)
-TOKEN = os.environ.get('TOKEN')
+HEROKU = os.environ.get('HEROKU')
+if HEROKU is True:
+    TOKEN = os.environ.get('TOKEN')
+else:
+    TOKEN = config.TOKEN
+
 bot = telebot.TeleBot(TOKEN)
 #это глвное меню бота (вызывается из базы данных, формируется на основе ее значений)
 #функция заполняет клавиатуру которая генерируется из базы данных (только главное меню)
