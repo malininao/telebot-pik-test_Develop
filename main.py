@@ -10,7 +10,7 @@ import logging
 
 #не забуд прописать в терминал команду pip install pytelegrambotapi (если у тебя мак то pip3, а не pip)
 HEROKU = os.environ.get('HEROKU')
-if HEROKU is True:
+if HEROKU:
     TOKEN = os.environ.get('TOKEN')
 else:
     TOKEN = config.TOKEN
