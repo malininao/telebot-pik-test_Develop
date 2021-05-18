@@ -32,9 +32,10 @@ def main_menu_select_step(message):
     markup = types.ReplyKeyboardMarkup(one_time_keyboard=True, resize_keyboard=True, row_width=2)  # переменная вызывает клавиатуру
     messageList = []
     for item in data:
-        itembtn = types.KeyboardButton(item[1])
+        if item[1] != "" and item[2] is not None and item[2] != "":
+            itembtn = types.KeyboardButton(item[1])
+            markup.add(itembtn)
         messageList.append(str(item[4]))
-        markup.add(itembtn)
     msg = bot.send_message(message.chat.id,
                            messageList[0],
                            reply_markup=markup, disable_notification=True)  # вызвать клаву
