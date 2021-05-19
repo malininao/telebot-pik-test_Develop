@@ -2,7 +2,6 @@ import telebot
 from telebot import types
 import os
 from data_functions import getData
-import img_download as img_d
 import google_read_module as google_read
 
 
