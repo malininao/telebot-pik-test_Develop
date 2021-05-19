@@ -3,7 +3,7 @@ from telebot import types
 import os
 from data_functions import getData
 import img_download as img_d
-#import google_read_module as googleRead
+import google_read_module as google_read
 
 
 #не забуд прописать в терминал команду pip install pytelegrambotapi (если у тебя мак то pip3, а не pip)
@@ -38,9 +38,8 @@ def main_menu_select_step(message):
     markup = types.ReplyKeyboardMarkup(one_time_keyboard=True, resize_keyboard=True, row_width=2)  # переменная вызывает клавиатуру
     messageList = []
     for item in data:
-        if item[1] != "" and item[2] is not None and item[2] != "":
-            itembtn = types.KeyboardButton(item[1])
-            markup.add(itembtn)
+        itembtn = types.KeyboardButton(item[1])
+        markup.add(itembtn)
         messageList.append(str(item[4]))
 
     msg = bot.send_message(message.chat.id,
@@ -121,7 +120,7 @@ def menu_select_step(message, data):
     markup = types.ReplyKeyboardMarkup(one_time_keyboard=True, resize_keyboard=True, row_width=2)  # переменная вызывает клавиатуру
     messageList = []
     for item in data:
-        if item[1] != "" and item[2] is not None and item[2] != "":
+        if item[1] != "" and item[2] is not None or item[2] != "":
             itembtn = types.KeyboardButton(item[1])
             markup.add(itembtn)
         messageList.append(str(item[4]))
@@ -176,17 +175,16 @@ def print_instruction_step(message, instruction, data, case, path):
             bot.reply_to(message, "Инструкция или изображение отсутствует")
             #bot.send_message(message.chat.id, instruction, parse_mode="HTML", disable_notification=True)
             main_menu_select_step(message)
-    #elif 'https://' in instruction:
-        #doc_body = googleRead.get_document_body(instruction)
-        #inline_object = googleRead.get_inline_object(instruction)
-        #instruction_text_list = googleRead.read_text(doc_body)
-        #instruction_img_list = googleRead.get_img(doc_body, inline_object)
-        #total_list = googleRead.join_total_list(instruction_text_list, instruction_img_list)
-        #for item in total_list:
-            #if item.count('googleusercontent') == 0:
-                #bot.send_message(message.chat.id, item, disable_notification=True, parse_mode="HTML")
-            #else:
-                #bot.send_photo(message.chat.id, item)
+    elif 'https://' in instruction:
+        doc = google_read.GoogleDocs(instruction)
+        instruction_text_list = google_read.read_text(doc.get_document_body())
+        instruction_img_list = google_read.get_img(doc.get_document_body(), doc.get_inline_object())
+        total_list = google_read.join_total_list(instruction_text_list, instruction_img_list)
+        for item in total_list:
+            if item.count('googleusercontent') == 0:
+                bot.send_message(message.chat.id, item, disable_notification=True, parse_mode="HTML")
+            else:
+                bot.send_photo(message.chat.id, item)
 
     else:
         if instruction != "":

@@ -7,25 +7,30 @@ from collections import defaultdict
 CREDENTIALS_FILE = 'osipia-eac8c331dd32.json'
 credentional = ServiceAccountCredentials.from_json_keyfile_name(
         CREDENTIALS_FILE,
-        ['https://www.googleapis.com/auth/drive', 'https://www.googleapis.com/auth/documents.readonly']
+        ['https://www.googleapis.com/auth/drive',
+         'https://www.googleapis.com/auth/documents.readonly']
     )
 httpAuth = credentional.authorize(httplib2.Http())
 services = googleapiclient.discovery.build('docs', 'v1', http=httpAuth)
-#linkURL = 'https://docs.google.com/document/d/1yb7TAgQQqjhBWoiCEmlRx0iZWbOp7BmHVxbRA_Ubl_k/edit'
 
 
-def get_document_body(link_urls):
-    docs_id = link_urls.split('/')[5]
-    document = services.documents().get(documentId=docs_id).execute()
-    doc_body = document.get('body')
-    return doc_body
+class GoogleDocs:
 
+    def get_document_from_url(self):
+        docs_id = self.lnk.split('/')[5]
+        document = services.documents().get(documentId=docs_id).execute()
+        return document
 
-def get_inline_object(link_urls):
-    docs_id = link_urls.split('/')[5]
-    document = services.documents().get(documentId=docs_id).execute()
-    inline_object = document.get('inlineObjects')
-    return inline_object
+    def get_document_body(self):
+        doc_body = self.get_document_from_url().get('body')
+        return doc_body
+
+    def get_inline_object(self):
+        inline_object = self.get_document_from_url().get('inlineObjects')
+        return inline_object
+
+    def __init__(self, link_url):
+        self.lnk = link_url
 
 
 def read_text(doc_body):
@@ -102,7 +107,7 @@ def join_total_list(tetx_list, img_list):
         if '' in total_list:
             total_list.remove('')
 
-
+    '''
     print(index_empty_text)
     print(index_empty_url)
 
@@ -110,14 +115,16 @@ def join_total_list(tetx_list, img_list):
     print(index_empty_url[''])
 
     print(total_list)
+    '''
     return total_list
 
 
 if __name__ == "__main__":
     linkURL = 'https://docs.google.com/document/d/1EJinayuOfj1-ZPJUdEXNh7-Ny0LJrCnz0H5E-W3poM8/edit'
-    read_text(get_document_body(linkURL))
-    get_img(get_document_body(linkURL), get_inline_object(linkURL))
-    join_total_list(read_text(get_document_body(linkURL)),
-                    get_img(get_document_body(linkURL), get_inline_object(linkURL)))
+    doc = GoogleDocs(linkURL)
+    read_text(doc.get_document_body())
+    get_img(doc.get_document_body(), doc.get_inline_object())
+    join_total_list(read_text(doc.get_document_body()),
+                    get_img(doc.get_document_body(), doc.get_inline_object()))
 
 
