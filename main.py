@@ -2,7 +2,8 @@ import telebot
 from telebot import types
 import os
 from data_functions import getData
-import google_read_module as google_read
+from google_read_module import GoogleDocs, GoogleDocsRead
+import img_download as img_d
 
 
 #не забуд прописать в терминал команду pip install pytelegrambotapi (если у тебя мак то pip3, а не pip)
@@ -37,8 +38,9 @@ def main_menu_select_step(message):
     markup = types.ReplyKeyboardMarkup(one_time_keyboard=True, resize_keyboard=True, row_width=2)  # переменная вызывает клавиатуру
     messageList = []
     for item in data:
-        itembtn = types.KeyboardButton(item[1])
-        markup.add(itembtn)
+        if item[1] != "" and item[2] is not None and item[2] != "":
+            itembtn = types.KeyboardButton(item[1])
+            markup.add(itembtn)
         messageList.append(str(item[4]))
 
     msg = bot.send_message(message.chat.id,
@@ -119,7 +121,7 @@ def menu_select_step(message, data):
     markup = types.ReplyKeyboardMarkup(one_time_keyboard=True, resize_keyboard=True, row_width=2)  # переменная вызывает клавиатуру
     messageList = []
     for item in data:
-        if item[1] != "" and item[2] is not None or item[2] != "":
+        if item[1] != "" and item[2] is not None and item[2] != "":
             itembtn = types.KeyboardButton(item[1])
             markup.add(itembtn)
         messageList.append(str(item[4]))
@@ -175,10 +177,9 @@ def print_instruction_step(message, instruction, data, case, path):
             #bot.send_message(message.chat.id, instruction, parse_mode="HTML", disable_notification=True)
             main_menu_select_step(message)
     elif 'https://' in instruction:
-        doc = google_read.GoogleDocs(instruction)
-        instruction_text_list = google_read.read_text(doc.get_document_body())
-        instruction_img_list = google_read.get_img(doc.get_document_body(), doc.get_inline_object())
-        total_list = google_read.join_total_list(instruction_text_list, instruction_img_list)
+        doc = GoogleDocs(instruction)
+        total_list = GoogleDocsRead(doc_body=doc.get_document_body(), inline_objects=doc.get_inline_object()
+                                    ).join_total_list()
         for item in total_list:
             if item.count('googleusercontent') == 0:
                 bot.send_message(message.chat.id, item, disable_notification=True, parse_mode="HTML")
