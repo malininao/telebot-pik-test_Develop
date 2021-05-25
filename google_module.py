@@ -29,23 +29,24 @@ else:
     CREDENTIALS_FILE = 'osipia-eac8c331dd32.json'
 
 scope = ['https://www.googleapis.com/auth/drive',
-         'https://www.googleapis.com/auth/documents.readonly']
+         'https://www.googleapis.com/auth/documents.readonly', 'https://www.googleapis.com/auth/spreadsheets']
 credentional = ServiceAccountCredentials.from_json_keyfile_name(
     CREDENTIALS_FILE,
     scope
 )
 httpAuth = credentional.authorize(httplib2.Http())
 services = googleapiclient.discovery.build('docs', 'v1', http=httpAuth)
+services_sheet = googleapiclient.discovery.build('sheets', 'v4', http=httpAuth)
 
 
 class GoogleDocs:
 
     # Класс который получает необходимые блоки гугл документа для дальнейшей работы в другом классе
     def __init__(self, link_url):
-        self.lnk = link_url
+        self.link_url = link_url
 
     def get_document_from_url(self):
-        docs_id = self.lnk.split('/')[5]
+        docs_id = self.link_url.split('/')[5]
         document = services.documents().get(documentId=docs_id).execute()
         return document
 
@@ -169,8 +170,85 @@ class GoogleDocsRead:
         return total_list
 
 
+class GoogleSheets:
+
+    def __init__(self, link_url):
+        self.link_url = link_url
+
+    def get_sheets_from_url(self):
+        sheet_id = self.link_url.split('/')[5]
+        return sheet_id
+
+    def get_sheets_values(self):
+        sheet = services_sheet.spreadsheets()
+        result = sheet.values().get(spreadsheetId=self.get_sheets_from_url(), range='A2:F').execute()
+        values = result.get('values', [])
+        if not values:
+            return "Нет данных"
+        else:
+            users_data = []
+            for row in values:
+                users_parameters = {
+                    'user_name': "Empty value",
+                    'date_start': "Empty value",
+                    'number_requests': "Empty value",
+                    'effective_requests': "Empty value",
+                    'time_of_latest_requests': "Empty value",
+                    'date_of_latest_requests': "Empty value"
+                }
+                if row:
+                    users_parameters['user_name'] = row[0]
+                    users_parameters['date_start'] = row[1]
+                    users_parameters['number_requests'] = row[2]
+                    users_parameters['effective_requests'] = row[3]
+                    users_parameters['time_of_latest_requests'] = row[4]
+                    users_parameters['date_of_latest_requests'] = row[5]
+
+                users_data.append(users_parameters)
+
+            return users_data
+
+    def get_user_data(self, username):
+        sheets_values = self.get_sheets_values()
+        if sheets_values == "Нет данных":
+            return "Нет данных"
+        else:
+            users_parameters = sheets_values
+            user_name_list = []
+            for item in users_parameters:
+                user_name_list.append(item['user_name'])
+            try:
+                index = user_name_list.index(username)
+                return users_parameters[index], int(index), user_name_list
+            except:
+                return "Пользователя нет в базе", user_name_list
+
+
+    def get_empty_value_index(self):
+        pass
+
+    def set_user_name(self, username):
+        user_data = self.get_user_data(username)
+        if user_data[0] == "Пользователя нет в базе":
+            if 'Empty value' in user_data[1]:
+                index = user_data[1].index('Empty value') + 2
+                print(f'Пользователь будет записан в строку: {index}')
+            else:
+                index = len(self.get_sheets_values()) + 2
+                print(f'Пользователь будет записан в строку: {index}')
+        else:
+            print(f"Такой пользователь уже создан. Строка {self.get_user_data(username)[1] + 2}")
+
+
 if __name__ == "__main__":
-    linkURL = 'https://docs.google.com/document/d/1yb7TAgQQqjhBWoiCEmlRx0iZWbOp7BmHVxbRA_Ubl_k/edit'
-    doc = GoogleDocs(linkURL)
-    instruction = GoogleDocsRead(doc_body=doc.get_document_body(),
-                                 inline_objects=doc.get_inline_object()).join_total_list()
+    #linkURL = 'https://docs.google.com/document/d/1yb7TAgQQqjhBWoiCEmlRx0iZWbOp7BmHVxbRA_Ubl_k/edit'
+    linkURLSheets = 'https://docs.google.com/spreadsheets/d/13mPMefBJ4gjLF2R6ONaOmJB6dsoM1ylWzg7cKQwh9tk/edit#gid=0'
+    #doc = GoogleDocs(linkURL)
+    #instruction = GoogleDocsRead(doc_body=doc.get_document_body(),
+                                 #inline_objects=doc.get_inline_object()).join_total_list()
+    data = GoogleSheets(linkURLSheets)
+    values = GoogleSheets(linkURLSheets).get_sheets_values()
+    user = GoogleSheets(linkURLSheets).get_user_data(username='Пользователь 2')
+    data.set_user_name(username='Пользователь 6')
+    print(user[1])
+    print(values)

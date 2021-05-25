@@ -2,7 +2,7 @@ import telebot
 from telebot import types
 import os
 from data_functions import getData
-from google_read_module import GoogleDocs, GoogleDocsRead
+from google_module import GoogleDocs, GoogleDocsRead
 import img_download as img_d
 
 
@@ -29,6 +29,7 @@ bot = telebot.TeleBot(TOKEN)
 @bot.message_handler(commands=['start'])
 def start(message):
     # Подключаем данные из БД
+    print(message.chat.username)
     bot.send_message(message.chat.id, "Бот запущен", disable_notification=True)
     main_menu_select_step(message)
 
@@ -184,7 +185,7 @@ def print_instruction_step(message, instruction, data, case, path):
             if item.count('googleusercontent') == 0:
                 bot.send_message(message.chat.id, item, disable_notification=True, parse_mode="HTML")
             else:
-                bot.send_photo(message.chat.id, item)
+                bot.send_photo(message.chat.id, item, disable_notification=True)
 
     else:
         if instruction != "":
@@ -232,7 +233,11 @@ def final_process_select_step(message, data):
 
 
 if __name__ == "__main__":
-    bot.polling()
+    try:
+        bot.polling()
+    except:
+        pass
+
 
 #Команды Git
 
