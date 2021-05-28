@@ -2,15 +2,15 @@ import telebot
 from telebot import types
 import os
 from data_functions import getData
-from google_module import GoogleDocs, GoogleDocsRead
+from google_module import GoogleDocs, GoogleDocsRead, GoogleSheets
 import img_download as img_d
 
 
 #не забуд прописать в терминал команду pip install pytelegrambotapi (если у тебя мак то pip3, а не pip)
 
 logger = telebot.logger
-
-
+linkURLSheets = 'https://docs.google.com/spreadsheets/d/13mPMefBJ4gjLF2R6ONaOmJB6dsoM1ylWzg7cKQwh9tk/edit#gid=0'
+sheet_data = GoogleSheets(linkURLSheets)
 
 HEROKU = os.environ.get('HEROKU')
 if HEROKU == "True":
@@ -28,8 +28,7 @@ bot = telebot.TeleBot(TOKEN)
 
 @bot.message_handler(commands=['start'])
 def start(message):
-    # Подключаем данные из БД
-    print(message.chat.username)
+    sheet_data.add_user(user_name=message.chat.username)
     bot.send_message(message.chat.id, "Бот запущен", disable_notification=True)
     main_menu_select_step(message)
 
@@ -191,6 +190,11 @@ def print_instruction_step(message, instruction, data, case, path):
         if instruction != "":
             bot.send_message(message.chat.id, instruction, parse_mode="HTML", disable_notification=True)
     if case == 1:
+        if message.text == "Спасибо, инструкция помогла":
+            effective = True
+        else:
+            effective = False
+        sheet_data.add_interaction_point(user_name=message.chat.username, effective=effective)
         main_menu_select_step(message)
     elif case == 2:
         final_menu_select_step(message, data)
@@ -220,6 +224,11 @@ def final_process_select_step(message, data):
             texts.append(item[1])
             answers.append(item[3])
         index = texts.index(message.text)
+        if message.text == "Да":
+            effective = True
+        else:
+            effective = False
+        sheet_data.add_interaction_point(user_name=message.chat.username, effective=effective)
         bot.send_message(message.chat.id, answers[index], disable_notification=True)
         main_menu_select_step(message)
     except Exception as e:

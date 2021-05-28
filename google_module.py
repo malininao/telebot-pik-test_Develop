@@ -4,6 +4,7 @@ import googleapiclient.discovery
 from oauth2client.service_account import ServiceAccountCredentials
 from collections import defaultdict
 import os
+from datetime import datetime
 
 
 def create_keyfile_dict():
@@ -181,74 +182,91 @@ class GoogleSheets:
 
     def get_sheets_values(self):
         sheet = services_sheet.spreadsheets()
-        result = sheet.values().get(spreadsheetId=self.get_sheets_from_url(), range='A2:F').execute()
+        result = sheet.values().get(spreadsheetId=self.get_sheets_from_url(), range='База!A2:F').execute()
         values = result.get('values', [])
-        if not values:
-            return "Нет данных"
-        else:
-            users_data = []
-            for row in values:
-                users_parameters = {
-                    'user_name': "Empty value",
-                    'date_start': "Empty value",
-                    'number_requests': "Empty value",
-                    'effective_requests': "Empty value",
-                    'time_of_latest_requests': "Empty value",
-                    'date_of_latest_requests': "Empty value"
-                }
-                if row:
-                    users_parameters['user_name'] = row[0]
-                    users_parameters['date_start'] = row[1]
-                    users_parameters['number_requests'] = row[2]
-                    users_parameters['effective_requests'] = row[3]
-                    users_parameters['time_of_latest_requests'] = row[4]
-                    users_parameters['date_of_latest_requests'] = row[5]
+        users_data = []
+        for row in values:
+            users_parameters = {
+                'user_name': "Empty value",
+                'date_start': "Empty value",
+                'number_requests': 0,
+                'effective_requests': 0,
+                'time_of_latest_requests': "Empty value",
+                'date_of_latest_requests': "Empty value"
+            }
+            if row:
+                users_parameters['user_name'] = row[0]
+                users_parameters['date_start'] = row[1]
+                users_parameters['number_requests'] = row[2]
+                users_parameters['effective_requests'] = row[3]
+                users_parameters['time_of_latest_requests'] = row[4]
+                users_parameters['date_of_latest_requests'] = row[5]
 
-                users_data.append(users_parameters)
+            users_data.append(users_parameters)
 
-            return users_data
+        return users_data
 
     def get_user_data(self, username):
         sheets_values = self.get_sheets_values()
-        if sheets_values == "Нет данных":
-            return "Нет данных"
-        else:
-            users_parameters = sheets_values
-            user_name_list = []
-            for item in users_parameters:
-                user_name_list.append(item['user_name'])
-            try:
-                index = user_name_list.index(username)
-                return users_parameters[index], int(index), user_name_list
-            except:
-                return "Пользователя нет в базе", user_name_list
+        users_parameters = sheets_values
+        user_name_list = []
+        for item in users_parameters:
+            user_name_list.append(item['user_name'])
+        try:
+            index = user_name_list.index(username)
+            return users_parameters[index], int(index), user_name_list
+        except:
+            return "Пользователя нет в базе", user_name_list
 
-
-    def get_empty_value_index(self):
-        pass
-
-    def set_user_name(self, username):
-        user_data = self.get_user_data(username)
+    def add_user(self, user_name):
+        sheet = services_sheet.spreadsheets()
+        user_data = self.get_user_data(user_name)
+        date = f'{datetime.now().date().day}.{datetime.now().date().month}.{datetime.now().date().year}'
         if user_data[0] == "Пользователя нет в базе":
             if 'Empty value' in user_data[1]:
                 index = user_data[1].index('Empty value') + 2
-                print(f'Пользователь будет записан в строку: {index}')
+                print(f'Пользователь записан в строку: {index}')
             else:
                 index = len(self.get_sheets_values()) + 2
-                print(f'Пользователь будет записан в строку: {index}')
+                print(f'Пользователь записан в строку: {index}')
+            request = sheet.values().update(spreadsheetId=self.get_sheets_from_url(), range=f'База!A{index}',
+                                            valueInputOption='USER_ENTERED',
+                                            body={'values': [[user_name, f"{date}", 0, 0, 'Empty', 'Empty']]})
+            request.execute()
         else:
-            print(f"Такой пользователь уже создан. Строка {self.get_user_data(username)[1] + 2}")
+            print(f"Такой пользователь уже создан. Строка {self.get_user_data(user_name)[1] + 2}")
+
+    def add_interaction_point(self, user_name, effective):
+        self.add_user(user_name)
+        sheet = services_sheet.spreadsheets()
+        user_data = self.get_user_data(user_name)
+        last_count_request = user_data[0]['number_requests']
+        last_count_effective_request = user_data[0]['effective_requests']
+        new_count_request = int(last_count_request) + 1
+        if effective is True:
+            new_count_effective_request = int(last_count_effective_request) + 1
+        else:
+            new_count_effective_request = int(last_count_effective_request)
+        date = f'{datetime.now().date().day}.{datetime.now().date().month}.{datetime.now().date().year}'
+        time = f'{datetime.now().time().hour}:{datetime.now().time().minute}:{datetime.now().time().second}'
+        values = [[new_count_request, new_count_effective_request, time, date]]
+        index = user_data[1] + 2
+        request = sheet.values().update(spreadsheetId=self.get_sheets_from_url(), range=f'База!C{index}',
+                                        valueInputOption='USER_ENTERED',
+                                        body={'values': values})
+        request.execute()
 
 
 if __name__ == "__main__":
-    #linkURL = 'https://docs.google.com/document/d/1yb7TAgQQqjhBWoiCEmlRx0iZWbOp7BmHVxbRA_Ubl_k/edit'
+    # linkURL = 'https://docs.google.com/document/d/1yb7TAgQQqjhBWoiCEmlRx0iZWbOp7BmHVxbRA_Ubl_k/edit'
     linkURLSheets = 'https://docs.google.com/spreadsheets/d/13mPMefBJ4gjLF2R6ONaOmJB6dsoM1ylWzg7cKQwh9tk/edit#gid=0'
-    #doc = GoogleDocs(linkURL)
-    #instruction = GoogleDocsRead(doc_body=doc.get_document_body(),
-                                 #inline_objects=doc.get_inline_object()).join_total_list()
+    # doc = GoogleDocs(linkURL)
+    # instruction = GoogleDocsRead(doc_body=doc.get_document_body(),
+                                 # inline_objects=doc.get_inline_object()).join_total_list()
     data = GoogleSheets(linkURLSheets)
     values = GoogleSheets(linkURLSheets).get_sheets_values()
     user = GoogleSheets(linkURLSheets).get_user_data(username='Пользователь 2')
-    data.set_user_name(username='Пользователь 6')
-    print(user[1])
+    data.add_user(user_name='Пользователь 129')
+    data.add_interaction_point(user_name='Пользователь 129', effective=False)
+    print(user[0])
     print(values)
