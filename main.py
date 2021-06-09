@@ -136,59 +136,16 @@ def menu_select_step(message, data):
 
 def print_instruction_step(message, instruction, data, case, path):
     data = data
-    if "src" in path:
-        count_of_img = img_d.countImg(path)
-        print(f"В папке {path}\n{count_of_img} файла")
-        instruction_list = str(instruction).split("(рис)")
-        try:
-            if len(instruction_list) != count_of_img:
-                j = 0
-                for i in range(count_of_img):
-                    img = open(path + f"\\{i + 1}.png", 'rb')
-                    try:
-                        if len(instruction_list) != 1:
-                            bot.send_message(message.chat.id, instruction_list[j], disable_notification=True,
-                                         parse_mode="HTML")
-                            bot.send_photo(message.chat.id, img, disable_notification=True)
-                    except Exception as e:
-                        #bot.reply_to(message, "Ошибка инструкции")
-                        print(e)
-                        break
-                    j = j + 1
-                try:
-                    bot.send_message(message.chat.id, instruction_list[j], disable_notification=True, parse_mode="HTML")
-                except Exception as e:
-                    print(e)
-            else:
-                for i in range(count_of_img):
-                    img_path = path + f"\\{i + 1}.png"
-                    print(img_path)
-                    img = open(path + f"\\{i + 1}.png", 'rb')
-                    try:
-                        bot.send_message(message.chat.id, instruction_list[i], disable_notification=True, parse_mode="HTML")
-                        bot.send_photo(message.chat.id, img, disable_notification=True)
-                    except Exception as e:
-                        #bot.reply_to(message, "Ошибка инструкции")
-                        print(e)
-                        break
-        except Exception as e:
-            print(str(e))
-            bot.reply_to(message, "Инструкция или изображение отсутствует")
-            #bot.send_message(message.chat.id, instruction, parse_mode="HTML", disable_notification=True)
-            main_menu_select_step(message)
-    elif 'https://' in instruction:
-        doc = GoogleDocs(instruction)
-        total_list = GoogleDocsRead(doc_body=doc.get_document_body(), inline_objects=doc.get_inline_object()
-                                    ).join_total_list()
-        for item in total_list:
-            if item.count('googleusercontent') == 0:
-                bot.send_message(message.chat.id, item, disable_notification=True, parse_mode="HTML")
-            else:
-                bot.send_photo(message.chat.id, item, disable_notification=True)
 
-    else:
-        if instruction != "":
-            bot.send_message(message.chat.id, instruction, parse_mode="HTML", disable_notification=True)
+    doc = GoogleDocs(instruction)
+    total_list = GoogleDocsRead(doc_body=doc.get_document_body(), inline_objects=doc.get_inline_object()
+                                ).join_total_list()
+    for item in total_list:
+        if item.count('googleusercontent') == 0:
+            bot.send_message(message.chat.id, item, disable_notification=True, parse_mode="HTML")
+        else:
+            bot.send_photo(message.chat.id, item, disable_notification=True)
+
     if case == 1:
         if message.text == "Спасибо, инструкция помогла":
             effective = True
