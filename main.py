@@ -8,16 +8,18 @@ from google_module import GoogleDocs, GoogleDocsRead, GoogleSheets
 #не забуд прописать в терминал команду pip install pytelegrambotapi (если у тебя мак то pip3, а не pip)
 
 logger = telebot.logger
-linkURLSheets = 'https://docs.google.com/spreadsheets/d/13mPMefBJ4gjLF2R6ONaOmJB6dsoM1ylWzg7cKQwh9tk/edit#gid=0'
-sheet_data = GoogleSheets(linkURLSheets)
+
 
 HEROKU = os.environ.get('HEROKU')
 if HEROKU == "True":
     TOKEN = os.environ.get('TOKEN')
+    LINK_URL_SHEET = os.environ.get('LINK_URL_SHEET')
 else:
     import config
     TOKEN = config.TOKEN
+    LINK_URL_SHEET = config.LINK_URL_SHEETS
 
+sheet_data = GoogleSheets(LINK_URL_SHEET)
 bot = telebot.TeleBot(TOKEN)
 
 
