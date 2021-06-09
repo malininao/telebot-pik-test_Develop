@@ -24,14 +24,26 @@ def create_keyfile_dict():
 
 
 HEROKU = os.environ.get('HEROKU')
+scope = ['https://www.googleapis.com/auth/drive',
+         'https://www.googleapis.com/auth/documents.readonly', 'https://www.googleapis.com/auth/spreadsheets']
 if HEROKU == "True":
     CREDENTIALS_FILE = create_keyfile_dict()
+    credentional = ServiceAccountCredentials.from_json_keyfile_dict(
+        CREDENTIALS_FILE,
+        scope
+    )
+
 else:
     CREDENTIALS_FILE = 'osipia-eac8c331dd32.json'
+    credentional = ServiceAccountCredentials.from_json_keyfile_name(
+        CREDENTIALS_FILE,
+        scope
+    )
+
 
 scope = ['https://www.googleapis.com/auth/drive',
          'https://www.googleapis.com/auth/documents.readonly', 'https://www.googleapis.com/auth/spreadsheets']
-credentional = ServiceAccountCredentials.from_json_keyfile_name(
+credentional = ServiceAccountCredentials.from_json_keyfile_dict(
     CREDENTIALS_FILE,
     scope
 )
