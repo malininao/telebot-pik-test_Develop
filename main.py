@@ -3,7 +3,6 @@ from telebot import types
 import os
 from data_functions import getData
 from google_module import GoogleDocs, GoogleDocsRead, GoogleSheets
-import img_download as img_d
 
 
 #не забуд прописать в терминал команду pip install pytelegrambotapi (если у тебя мак то pip3, а не pip)
