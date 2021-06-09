@@ -41,12 +41,7 @@ else:
     )
 
 
-scope = ['https://www.googleapis.com/auth/drive',
-         'https://www.googleapis.com/auth/documents.readonly', 'https://www.googleapis.com/auth/spreadsheets']
-credentional = ServiceAccountCredentials.from_json_keyfile_dict(
-    CREDENTIALS_FILE,
-    scope
-)
+
 httpAuth = credentional.authorize(httplib2.Http())
 services = googleapiclient.discovery.build('docs', 'v1', http=httpAuth)
 services_sheet = googleapiclient.discovery.build('sheets', 'v4', http=httpAuth)
