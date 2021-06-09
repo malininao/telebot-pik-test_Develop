@@ -23,9 +23,9 @@ sheet_data = GoogleSheets(LINK_URL_SHEET)
 bot = telebot.TeleBot(TOKEN)
 
 
-#это глвное меню бота (вызывается из базы данных, формируется на основе ее значений)
-#функция заполняет клавиатуру которая генерируется из базы данных (только главное меню)
-#telebot.logger.setLevel(logging.DEBUG)
+# это глвное меню бота (вызывается из базы данных, формируется на основе ее значений)
+# функция заполняет клавиатуру которая генерируется из базы данных (только главное меню)
+# telebot.logger.setLevel(logging.DEBUG)
 
 @bot.message_handler(commands=['start'])
 def start(message):
@@ -138,15 +138,17 @@ def menu_select_step(message, data):
 def print_instruction_step(message, instruction, data, case, path):
     data = data
     if instruction != "":
-        doc = GoogleDocs(instruction)
-        total_list = GoogleDocsRead(doc_body=doc.get_document_body(), inline_objects=doc.get_inline_object()
-                                    ).join_total_list()
-        for item in total_list:
-            if item.count('googleusercontent') == 0:
-                bot.send_message(message.chat.id, item, disable_notification=True, parse_mode="HTML")
-            else:
-                bot.send_photo(message.chat.id, item, disable_notification=True)
-
+        if 'https://docs.google.com/' in instruction:
+            doc = GoogleDocs(instruction)
+            total_list = GoogleDocsRead(doc_body=doc.get_document_body(), inline_objects=doc.get_inline_object()
+                                        ).join_total_list()
+            for item in total_list:
+                if item.count('googleusercontent') == 0:
+                    bot.send_message(message.chat.id, item, disable_notification=True, parse_mode="HTML")
+                else:
+                    bot.send_photo(message.chat.id, item, disable_notification=True)
+        else:
+            bot.send_message(message.chat.id, instruction, disable_notification=True, parse_mode="HTML")
     if case == 1:
         if message.text == "Спасибо, инструкция помогла":
             effective = True
