@@ -1,11 +1,12 @@
 import requests
-import pprint
+import config
+from pprint import pprint
 
 
 S = requests.Session()
 
-#URL = "https://pikipedia.pik.ru/api.php"
-URL = 'https://www.mediawiki.org/w/api.php'
+URL = config.API_ENDPOINT
+#URL = 'https://www.mediawiki.org/w/api.php'
 
 PARAMS_0 = {
     "action": "query",
@@ -15,40 +16,33 @@ PARAMS_0 = {
 }
 
 R = S.get(URL, params=PARAMS_0)
-print(R)
 DATA = R.json()
 
 LOGIN_TOKEN = DATA['query']['tokens']['logintoken']
-print(LOGIN_TOKEN)
+pprint(LOGIN_TOKEN)
 
 PARAMS_1 = {
-    "action": "login",
-    "igname": "Malininao@OSIPIA",
-    "igpassword": "t2p7a0o4rhijjptu75ch84ionsioms02",
+    "action": "query",
+    "igname": config.IG_NAME,
+    "igpassword": config.IG_PASSWORD,
     "ig_token": LOGIN_TOKEN,
     "format": "json"
-
 }
 
 
 R = S.post(URL, data=PARAMS_1)
 DATA = R.json()
-print(DATA)
+pprint(DATA)
 
 PARAMS_2 = {
     "action": "parse",
-    "page": "API:Tokens",
+    "page": "Welcome_to_ПИК-Проект",
     "format": "json"
 }
 
 R = S.get(url=URL, params=PARAMS_2)
 DATA = R.json()
-print(DATA)
+pprint(DATA)
 
 
-#
-NewResponse = S.get('https://google.com/', params=PARAMS_2)
-#DATA = NewResponse.json()
-
-#print(DATA)
 
