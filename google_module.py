@@ -187,9 +187,10 @@ class GoogleSheets:
         sheet_id = self.link_url.split('/')[5]
         return sheet_id
 
-    def get_sheets_values(self):
+    def get_sheets_values(self, spreadsheets_name):
         sheet = services_sheet.spreadsheets()
-        result = sheet.values().get(spreadsheetId=self.get_sheets_from_url(), range='База!A2:F').execute()
+        result = sheet.values().get(spreadsheetId=self.get_sheets_from_url(),
+                                    range=f'{spreadsheets_name}!A2:F').execute()
         values = result.get('values', [])
         users_data = []
         for row in values:
@@ -213,8 +214,8 @@ class GoogleSheets:
 
         return users_data
 
-    def get_user_data(self, username):
-        sheets_values = self.get_sheets_values()
+    def get_user_data(self, username, spreadsheets_name):
+        sheets_values = self.get_sheets_values(spreadsheets_name)
         users_parameters = sheets_values
         user_name_list = []
         for item in users_parameters:
@@ -225,28 +226,29 @@ class GoogleSheets:
         except:
             return "Пользователя нет в базе", user_name_list
 
-    def add_user(self, user_name):
+    def add_user(self, user_name, spreadsheets_name):
         sheet = services_sheet.spreadsheets()
-        user_data = self.get_user_data(user_name)
+        user_data = self.get_user_data(user_name, spreadsheets_name)
         date = f'{datetime.now().date().day}.{datetime.now().date().month}.{datetime.now().date().year}'
         if user_data[0] == "Пользователя нет в базе":
             if 'Empty value' in user_data[1]:
                 index = user_data[1].index('Empty value') + 2
                 print(f'Пользователь записан в строку: {index}')
             else:
-                index = len(self.get_sheets_values()) + 2
+                index = len(self.get_sheets_values(spreadsheets_name)) + 2
                 print(f'Пользователь записан в строку: {index}')
-            request = sheet.values().update(spreadsheetId=self.get_sheets_from_url(), range=f'База!A{index}',
+            request = sheet.values().update(spreadsheetId=self.get_sheets_from_url(),
+                                            range=f'{spreadsheets_name}!A{index}',
                                             valueInputOption='USER_ENTERED',
                                             body={'values': [[user_name, f"{date}", 0, 0, 'Empty', 'Empty']]})
             request.execute()
         else:
-            print(f"Такой пользователь уже создан. Строка {self.get_user_data(user_name)[1] + 2}")
+            print(f"Такой пользователь уже создан. Строка {self.get_user_data(user_name, spreadsheets_name)[1] + 1}")
 
-    def add_interaction_point(self, user_name, effective):
-        self.add_user(user_name)
+    def add_interaction_point(self, user_name, effective, spreadsheets_name):
+        self.add_user(user_name, spreadsheets_name)
         sheet = services_sheet.spreadsheets()
-        user_data = self.get_user_data(user_name)
+        user_data = self.get_user_data(user_name, spreadsheets_name)
         last_count_request = user_data[0]['number_requests']
         last_count_effective_request = user_data[0]['effective_requests']
         new_count_request = int(last_count_request) + 1
@@ -264,6 +266,67 @@ class GoogleSheets:
         request.execute()
 
 
+    def add_interaction_point_get_instruction(self, user_name):
+        sheet = services_sheet.spreadsheets()
+        date = f'{datetime.now().date().day}.{datetime.now().date().month}.{datetime.now().date().year}'
+        time = f'{datetime.now().time().hour}:{datetime.now().time().minute}:{datetime.now().time().second}'
+        request = sheet.values().append(spreadsheetId = self.get_sheets_from_url(), range=f'База!:A2',
+                                        valueInputOption='INSERT_ROW', body={})
+
+
+        pass
+
+    def get_sheets_values_from_base(self, spreadsheets_name, start_row='', end_row='', start_column='A', end_column='ZZ'):
+        sheet = services_sheet.spreadsheets()
+        result = sheet.values().get(spreadsheetId=self.get_sheets_from_url(),
+                                    range=f'{spreadsheets_name}!{start_column}{start_row}:{end_column}{end_row}')
+        request = result.execute()
+        values = request.get('values', [])
+
+        return values
+
+    @staticmethod
+    def get_users_dict(values, dictionary):
+        users_data = []
+        for row in values:
+            new_dictionary = {key: value for key, value in dictionary.items()}
+            if row:
+                i = 0
+                for key, value in new_dictionary.items():
+                    new_dictionary[key] = row[i]
+                    i += 1
+            users_data.append(new_dictionary)
+
+        return users_data
+
+    @staticmethod
+    def get_user_data_from_base(user_id, users_data):
+        users_parameters = users_data
+        user_id_list = []
+        for item in users_parameters:
+            user_id_list.append(item['user_id'])
+        try:
+            index = user_id_list.index(str(user_id))
+            return users_parameters[index], int(index), user_id_list
+        except:
+            return "Пользователя нет в базе", user_id_list
+
+
+    def add_user_in_base(self, user_data, user_id, user_name, spreadsheets_name, email, values):
+        sheet = services_sheet.spreadsheets()
+        if user_data[0] == "Пользователя нет в базе":
+            if 'Empty value' in user_data[1]:
+                index = user_data[1].index('Empty value') + 2
+                print(f'Пользователь записан в строку: {index}')
+            else:
+                index = len(values) + 2
+                print(f'Пользователь записан в строку: {index}')
+            request = sheet.values().update(spreadsheetId=self.get_sheets_from_url(),
+                                            range=f'{spreadsheets_name}!A{index}',
+                                            valueInputOption='USER_ENTERED',
+                                            body={'values': [[user_id, user_name, f"{email}"]]})
+            request.execute()
+
 if __name__ == "__main__":
     # linkURL = 'https://docs.google.com/document/d/1yb7TAgQQqjhBWoiCEmlRx0iZWbOp7BmHVxbRA_Ubl_k/edit'
     linkURLSheets = 'https://docs.google.com/spreadsheets/d/13mPMefBJ4gjLF2R6ONaOmJB6dsoM1ylWzg7cKQwh9tk/edit#gid=0'
@@ -271,9 +334,20 @@ if __name__ == "__main__":
     # instruction = GoogleDocsRead(doc_body=doc.get_document_body(),
                                  # inline_objects=doc.get_inline_object()).join_total_list()
     data = GoogleSheets(linkURLSheets)
-    values = GoogleSheets(linkURLSheets).get_sheets_values()
-    user = GoogleSheets(linkURLSheets).get_user_data(username='Пользователь 2')
-    data.add_user(user_name='Пользователь 129')
-    data.add_interaction_point(user_name='Пользователь 129', effective=False)
-    print(user[0])
-    print(values)
+    values = GoogleSheets(linkURLSheets).get_sheets_values_from_base('База пользователей', start_column='A',
+                                                                     start_row='2', end_column='C')
+    users_parameters = {
+        'user_id': "Empty value",
+        'user_name': "Empty value",
+        'email': "Empty value"
+    }
+
+    #print(data.get_user_data("Norrischakovich", "База пользователей"))
+    print(data.get_users_dict(values, users_parameters))
+    dict = data.get_users_dict(values, users_parameters)
+    user_data = data.get_user_data_from_base("6", dict)
+    data.add_user_in_base(user_data, "5215", "6", "База пользователей", "ыфвыфв@ьфшыаф", values)
+    print(data.get_user_data_from_base("2", dict))
+
+    #print(values)
+

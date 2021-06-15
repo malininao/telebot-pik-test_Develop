@@ -3,9 +3,10 @@ from telebot import types
 import os
 from data_functions import getData
 from google_module import GoogleDocs, GoogleDocsRead, GoogleSheets
+import logging
 
 
-#не забуд прописать в терминал команду pip install pytelegrambotapi (если у тебя мак то pip3, а не pip)
+# не забуд прописать в терминал команду pip install pytelegrambotapi (если у тебя мак то pip3, а не pip)
 
 logger = telebot.logger
 
@@ -29,83 +30,121 @@ bot = telebot.TeleBot(TOKEN)
 
 @bot.message_handler(commands=['start'])
 def start(message):
-    sheet_data.add_user(user_name=message.chat.username)
-    bot.send_message(message.chat.id, "Бот запущен", disable_notification=True)
-    main_menu_select_step(message)
+    set_job_email(message)
+
 
 @bot.message_handler(content_types=['text'])
+def reload_bot(message):
+    print("1")
+    set_job_email(message)
+
+
+def set_job_email(message):
+    sheet_values = sheet_data.get_sheets_values_from_base('База пользователей', start_column='A',
+                                                          start_row='2', end_column='C')
+    users_parameters = {
+        'user_id': "Empty value",
+        'user_name': "Empty value",
+        'email': "Empty value"
+    }
+    dict = sheet_data.get_users_dict(sheet_values, users_parameters)
+    user_data = sheet_data.get_user_data_from_base(message.chat.id, dict)
+    print(user_data)
+    if user_data[0] == "Пользователя нет в базе":
+        markup = types.ReplyKeyboardRemove()
+        msg = bot.send_message(message.chat.id, "Введите рабочую почту", reply_markup=markup, disable_notification=True)
+        print(message.chat.id)
+
+        bot.register_next_step_handler(msg, add_user_in_base, user_data, sheet_values)
+
+    else:
+        print("3")
+        main_menu_select_step(message)
+
+
+def add_user_in_base(message, user_data, sheet_values):
+    if "@pik.ru" in message.text:
+        bot.send_message(message.chat.id, "Данные записываются...")
+        sheet_data.add_user_in_base(user_data, message.chat.id, message.chat.username,
+                                    "База пользователей", message.text, sheet_values)
+        telebot.logger.setLevel(logging.DEBUG)
+        print("4")
+        main_menu_select_step(message)
+    else:
+        bot.send_message(message.chat.id, "Почта не зарегистрирована в домене pik.ru")
+        bot.register_next_step_handler(message, set_job_email)
+
+
+
 def main_menu_select_step(message):
+    print("5")
     data = getData('t1')
-    markup = types.ReplyKeyboardMarkup(one_time_keyboard=True, resize_keyboard=True, row_width=2)  # переменная вызывает клавиатуру
-    messageList = []
+    markup = types.ReplyKeyboardMarkup(one_time_keyboard=True, resize_keyboard=True, row_width=2)
+    message_list = []
     for item in data:
         if item[1] != "" and item[2] is not None and item[2] != "":
-            itembtn = types.KeyboardButton(item[1])
-            markup.add(itembtn)
-        messageList.append(str(item[4]))
-
+            item_btn = types.KeyboardButton(item[1])
+            markup.add(item_btn)
+        message_list.append(str(item[4]))
     msg = bot.send_message(message.chat.id,
-                           messageList[0],
+                           message_list[0],
                            reply_markup=markup, disable_notification=True)  # вызвать клаву
+    print("6")
     bot.register_next_step_handler(msg, process_select_step, data)
 
 
-#выбор дальнейших шагов в по таблицам БД
+# выбор дальнейших шагов в по таблицам БД
 def process_select_step(message, data):
     # пустые массивы в начале функций нужны для того что при каждом вызове функции из значения заполнялись заново
-    nextStep = []
+    next_step = []
     texts = []
-    lastStep = []
+    last_step = []
     try:
-        for item in data: #пробег по массиву из кортежей, получаем следующую т
+        for item in data:  # пробег по массиву из кортежей, получаем следующую т
             # аблицу, текст кнопок, и предыдущую таблицу
             texts.append(item[1])
-            nextStep.append(str(item[2]))
-            lastStep.append(str(item[3]))
+            next_step.append(str(item[2]))
+            last_step.append(str(item[3]))
             print(item[1], "->", item[2])
         index = texts.index(message.text)
-        table = nextStep[index]
-        lastTable = lastStep[index]
-        print("Переход к финальной инструкции IT", str("t01" in nextStep))
-        print("Переход к финальной инструкции BIM", str("t02" in nextStep))
-        if "t01" in nextStep or "t02" in nextStep or "t1" in nextStep: #если следующая таблица пустая то вызывается
+        table = next_step[index]
+        last_table = last_step[index]
+        print("Переход к финальной инструкции IT", str("t01" in next_step))
+        print("Переход к финальной инструкции BIM", str("t02" in next_step))
+        if "t01" in next_step or "t02" in next_step or "t1" in next_step:  # если следующая таблица пустая то вызывается
             # функция в которой выводится текст инструкции
-            instructionList=[]
-            imgList = []
+            instruction_list = []
             for item in data:
-                instructionList.append(item[5])
-                imgList.append(str(item[6]) + "\\"+str(item[1]))
+                instruction_list.append(item[5])
             index = texts.index(message.text)
-            instruction = instructionList[index]
-            path = imgList[index]
-            table = nextStep[index]
-            if nextStep[index] == '<-':
-                data = getData(lastTable)
+            instruction = instruction_list[index]
+            table = next_step[index]
+            if next_step[index] == '<-':
+                data = getData(last_table)
                 menu_select_step(message, data)
             else:
-                if nextStep[index] == 't1':
+                if next_step[index] == 't1':
                     case = 1
-                elif nextStep[index] == 't01' or nextStep[index] == 't02':
+                elif next_step[index] == 't01' or next_step[index] == 't02':
                     case = 2
                 else:
                     case = 3
 
                 data = getData(table)
-                print_instruction_step(message, instruction, data, case, path)
+                print_instruction_step(message, instruction, data, case)
 
-        else:#в любом другом случае получаем данные о дальнейшем и предыдущем шаге
+        else:  # в любом другом случае получаем данные о дальнейшем и предыдущем шаге
             # для вызова шаблонной функции генерации кнопок
             print(table)
             if table == "<-":
-                data = getData(lastTable)
+                data = getData(last_table)
                 menu_select_step(message, data)
             else:
                 data = getData(table)
                 menu_select_step(message, data)
     except Exception as e:
-        #telebot.logger.setLevel(logging.DEBUG)
         if message.text == "В НАЧАЛО":
-            main_menu_select_step(message)
+            reload_bot(message)
         elif message.text == "/start":
             start(message)
         else:
@@ -113,29 +152,30 @@ def process_select_step(message, data):
             bot.reply_to(message, "Раздел")
             bot.send_message(message.chat.id, 'В данный момент не доступен', reply_markup=types.ReplyKeyboardRemove(),
                              disable_notification=True)
-            main_menu_select_step(message)
+            reload_bot(message)
+
+# Обычная функция генерации кнопок, ничего примечательного
 
 
-
-#Обычная функция генерации кнопок, ничего примечательного
 def menu_select_step(message, data):
-    markup = types.ReplyKeyboardMarkup(one_time_keyboard=True, resize_keyboard=True, row_width=2)  # переменная вызывает клавиатуру
-    messageList = []
+    markup = types.ReplyKeyboardMarkup(one_time_keyboard=True, resize_keyboard=True, row_width=2)
+    message_list = []
     for item in data:
         if item[1] != "" and item[2] is not None and item[2] != "":
             itembtn = types.KeyboardButton(item[1])
             markup.add(itembtn)
-        messageList.append(str(item[4]))
-    itemBtnBack = types.KeyboardButton('В НАЧАЛО')
-    markup.add(itemBtnBack)
+        message_list.append(str(item[4]))
+    item_btn_back = types.KeyboardButton('В НАЧАЛО')
+    markup.add(item_btn_back)
     msg = bot.send_message(message.chat.id,
-                           messageList[0],
+                           message_list[0],
                            reply_markup=markup, disable_notification=True)  # вызвать клаву
     bot.register_next_step_handler(msg, process_select_step, data)
 
-#функция отвечает за вывод текста(далее изображений) инструкции
+# функция отвечает за вывод текста(далее изображений) инструкции
 
-def print_instruction_step(message, instruction, data, case, path):
+
+def print_instruction_step(message, instruction, data, case):
     data = data
     if instruction != "":
         if 'https://docs.google.com/' in instruction:
@@ -154,28 +194,29 @@ def print_instruction_step(message, instruction, data, case, path):
             effective = True
         else:
             effective = False
-        sheet_data.add_interaction_point(user_name=message.chat.username, effective=effective)
-        main_menu_select_step(message)
+        sheet_data.add_interaction_point(user_name=message.chat.username, effective=effective, spreadsheets_name='База')
+        reload_bot(message)
     elif case == 2:
         final_menu_select_step(message, data)
     elif case == 3:
         menu_select_step(message, data)
 
 
-#Последний шаг, генерируются кнопки для завершения работы (вопрос: помогло или нет?)
+# Последний шаг, генерируются кнопки для завершения работы (вопрос: помогло или нет?)
 def final_menu_select_step(message, data):
-    markup = types.ReplyKeyboardMarkup(one_time_keyboard=True, resize_keyboard=True, row_width=2)  # переменная вызывает клавиатуру
-    messageList = []
+    markup = types.ReplyKeyboardMarkup(one_time_keyboard=True, resize_keyboard=True, row_width=2)
+    message_list = []
     for item in data:
         itembtn = types.KeyboardButton(item[1])
-        messageList.append(str(item[2]))
+        message_list.append(str(item[2]))
         markup.add(itembtn)
     msg = bot.send_message(message.chat.id,
-                           messageList[0],
+                           message_list[0],
                            reply_markup=markup, disable_notification=True)  # вызвать клаву
     bot.register_next_step_handler(msg, final_process_select_step, data)
 
-#выводится тескт с дальнейшими указаниями если инструкция не помогла. (в дальнейшем здесь будет вызываться запись в БД)
+
+# выводится тескт с дальнейшими указаниями если инструкция не помогла. (в дальнейшем здесь будет вызываться запись в БД)
 def final_process_select_step(message, data):
     texts = []
     answers = []
@@ -188,29 +229,28 @@ def final_process_select_step(message, data):
             effective = True
         else:
             effective = False
-        sheet_data.add_interaction_point(user_name=message.chat.username, effective=effective)
+        sheet_data.add_interaction_point(user_name=message.chat.username, effective=effective, spreadsheets_name='База')
         bot.send_message(message.chat.id, answers[index], disable_notification=True)
-        main_menu_select_step(message)
+        reload_bot(message)
     except Exception as e:
-        #telebot.logger.setLevel(logging.DEBUG)
         if message.text == "В НАЧАЛО":
-            main_menu_select_step(message)
+            reload_bot(message)
         else:
             print(str(e))
             bot.reply_to(message, 'Такого раздела пока нет')
-            main_menu_select_step(message)
+            reload_bot(message)
 
 
 if __name__ == "__main__":
     try:
-        bot.polling()
+        bot.polling(none_stop=True)
     except:
         pass
 
 
-#Команды Git
+# Команды Git
 
-#git add .
-#git commit -m "*"
-#git push
-#git push heroku main
+# git add .
+# git commit -m "*"
+# git push
+# git push heroku main
