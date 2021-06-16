@@ -30,13 +30,15 @@ bot = telebot.TeleBot(TOKEN)
 
 @bot.message_handler(commands=['start'])
 def start(message):
-    set_job_email(message)
+    #set_job_email(message)
+    main_menu_select_step(message)
 
 
 @bot.message_handler(content_types=['text'])
 def reload_bot(message):
-    print("1")
-    set_job_email(message)
+    #print("1")
+    #set_job_email(message)
+    main_menu_select_step(message)
 
 
 def set_job_email(message):
@@ -72,7 +74,7 @@ def add_user_in_base(message, user_data, sheet_values):
         main_menu_select_step(message)
     else:
         bot.send_message(message.chat.id, "Почта не зарегистрирована в домене pik.ru")
-        bot.register_next_step_handler(message, set_job_email)
+        set_job_email(message)
 
 
 
