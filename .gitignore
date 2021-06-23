@@ -10,5 +10,4 @@ osipia-eac8c331dd32.json
 server.crt
 server.csr
 server.key
-data.db
-google_read_module.py
+img_download.py
