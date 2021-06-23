@@ -4,7 +4,6 @@ config.py
 archive.py
 webhook_pkey.pem
 webhook_cert.pem
-/src
 /serf
 osipia-eac8c331dd32.json
 server.crt
