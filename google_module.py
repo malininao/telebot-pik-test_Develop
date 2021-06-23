@@ -212,21 +212,21 @@ class GoogleSheets:
 
         return users_data
 
-    def get_user_data(self, username, spreadsheets_name):
+    def get_user_data(self, user_id, spreadsheets_name):
         sheets_values = self.get_sheets_values(spreadsheets_name)
         users_parameters = sheets_values
         user_name_list = []
         for item in users_parameters:
             user_name_list.append(item['user_name'])
         try:
-            index = user_name_list.index(username)
+            index = user_name_list.index(str(user_id))
             return users_parameters[index], int(index), user_name_list
         except:
             return "Пользователя нет в базе", user_name_list
 
-    def add_user(self, user_name, spreadsheets_name):
+    def add_user(self, user_id, spreadsheets_name):
         sheet = services_sheet.spreadsheets()
-        user_data = self.get_user_data(user_name, spreadsheets_name)
+        user_data = self.get_user_data(user_id, spreadsheets_name)
         date = f'{datetime.now().date().day}.{datetime.now().date().month}.{datetime.now().date().year}'
         if user_data[0] == "Пользователя нет в базе":
             if 'Empty value' in user_data[1]:
@@ -238,15 +238,15 @@ class GoogleSheets:
             request = sheet.values().update(spreadsheetId=self.get_sheets_from_url(),
                                             range=f'{spreadsheets_name}!A{index}',
                                             valueInputOption='USER_ENTERED',
-                                            body={'values': [[user_name, f"{date}", 0, 0, 'Empty', 'Empty']]})
+                                            body={'values': [[user_id, f"{date}", 0, 0, 'Empty', 'Empty']]})
             request.execute()
         else:
-            print(f"Такой пользователь уже создан. Строка {self.get_user_data(user_name, spreadsheets_name)[1] + 1}")
+            print(f"Такой пользователь уже создан. Строка {self.get_user_data(user_id, spreadsheets_name)[1] + 1}")
 
-    def add_interaction_point(self, user_name, effective, spreadsheets_name):
-        self.add_user(user_name, spreadsheets_name)
+    def add_interaction_point(self, user_id, effective, spreadsheets_name):
+        self.add_user(user_id, spreadsheets_name)
         sheet = services_sheet.spreadsheets()
-        user_data = self.get_user_data(user_name, spreadsheets_name)
+        user_data = self.get_user_data(user_id, spreadsheets_name)
         last_count_request = user_data[0]['number_requests']
         last_count_effective_request = user_data[0]['effective_requests']
         new_count_request = int(last_count_request) + 1
@@ -263,6 +263,7 @@ class GoogleSheets:
                                         body={'values': values})
         request.execute()
 
+    # ============================================== Начало новых функций =============================================
     def add_interaction(self, values, spreadsheet_name):
 
         '''
