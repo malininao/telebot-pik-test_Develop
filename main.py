@@ -8,9 +8,13 @@ from datetime import datetime
 from recode_instriction_name import DecoderTableName
 
 
+#from flask import Flask, request
+import logging
+#import timegit
 # не забуд прописать в терминал команду pip install pytelegrambotapi (если у тебя мак то pip3, а не pip)
 
 logger = telebot.logger
+
 
 
 HEROKU = os.environ.get('HEROKU')
@@ -35,6 +39,7 @@ def get_date_time():
     time = f'{datetime.now().time().hour}:{datetime.now().time().minute}:{datetime.now().time().second}'
     date_time = f'{time} {date}'
     return date_time
+
 
 
 @bot.message_handler(commands=['start'])
@@ -95,6 +100,7 @@ def main_menu_select_step(message):
     message_list = []
     for item in data:
         if item[1] != "" and item[2] is not None and item[2] != "":
+
             item_btn = types.KeyboardButton(item[1])
             markup.add(item_btn)
         message_list.append(str(item[4]))
@@ -224,7 +230,7 @@ def print_instruction_step(message, instruction, data, case, selected_table):
             sheet_data.add_interaction(values, spreadsheet_name='База полезных запросов')
         else:
             effective = False
-        sheet_data.add_interaction_point(user_name=message.chat.id, effective=effective, spreadsheets_name='База')
+        sheet_data.add_interaction_point(user_name=message.chat.username, effective=effective, spreadsheets_name='База')
         reload_bot(message)
     elif case == 2:
         final_menu_select_step(message, data, values)
@@ -245,7 +251,6 @@ def final_menu_select_step(message, data, values):
                            reply_markup=markup, disable_notification=True)  # вызвать клаву
     bot.register_next_step_handler(msg, final_process_select_step, data, values)
 
-
 # выводится тескт с дальнейшими указаниями если инструкция не помогла. (в дальнейшем здесь будет вызываться запись в БД)
 def final_process_select_step(message, data, values):
     texts = []
@@ -261,7 +266,7 @@ def final_process_select_step(message, data, values):
             sheet_data.add_interaction(values, spreadsheet_name='База полезных запросов')
         else:
             effective = False
-        sheet_data.add_interaction_point(user_name=message.chat.id, effective=effective, spreadsheets_name='База')
+        sheet_data.add_interaction_point(user_name=message.chat.username, effective=effective, spreadsheets_name='База')
         bot.send_message(message.chat.id, answers[index], disable_notification=True)
         reload_bot(message)
     except Exception as e:
@@ -272,6 +277,8 @@ def final_process_select_step(message, data, values):
             bot.reply_to(message, 'Такого раздела пока нет')
             reload_bot(message)
 
+#def error_polling(message):
+    #bot.send_message(message.chat.id, "Подключение восстановлено")
 
 if __name__ == "__main__":
     try:
