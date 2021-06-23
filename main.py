@@ -230,7 +230,7 @@ def print_instruction_step(message, instruction, data, case, selected_table):
             sheet_data.add_interaction(values, spreadsheet_name='База полезных запросов')
         else:
             effective = False
-        sheet_data.add_interaction_point(user_name=message.chat.id, effective=effective, spreadsheets_name='База')
+        sheet_data.add_interaction_point(user_name=message.chat.username, effective=effective, spreadsheets_name='База')
         reload_bot(message)
     elif case == 2:
         final_menu_select_step(message, data, values)
@@ -266,7 +266,7 @@ def final_process_select_step(message, data, values):
             sheet_data.add_interaction(values, spreadsheet_name='База полезных запросов')
         else:
             effective = False
-        sheet_data.add_interaction_point(user_name=message.chat.id, effective=effective, spreadsheets_name='База')
+        sheet_data.add_interaction_point(user_name=message.chat.username, effective=effective, spreadsheets_name='База')
         bot.send_message(message.chat.id, answers[index], disable_notification=True)
         reload_bot(message)
     except Exception as e:
