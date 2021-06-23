@@ -3,15 +3,12 @@ from telebot import types
 import os
 from data_functions import getData
 import img_download as img_d
-#import google_read_module as googleRead
 
+#from flask import Flask, request
+import logging
+#import timegit
 
 #не забуд прописать в терминал команду pip install pytelegrambotapi (если у тебя мак то pip3, а не pip)
-
-logger = telebot.logger
-
-
-
 HEROKU = os.environ.get('HEROKU')
 if HEROKU == "True":
     TOKEN = os.environ.get('TOKEN')
@@ -20,12 +17,9 @@ else:
     TOKEN = config.TOKEN
 
 bot = telebot.TeleBot(TOKEN)
-
-
 #это глвное меню бота (вызывается из базы данных, формируется на основе ее значений)
 #функция заполняет клавиатуру которая генерируется из базы данных (только главное меню)
 #telebot.logger.setLevel(logging.DEBUG)
-
 @bot.message_handler(commands=['start'])
 def start(message):
     # Подключаем данные из БД
@@ -42,7 +36,6 @@ def main_menu_select_step(message):
             itembtn = types.KeyboardButton(item[1])
             markup.add(itembtn)
         messageList.append(str(item[4]))
-
     msg = bot.send_message(message.chat.id,
                            messageList[0],
                            reply_markup=markup, disable_notification=True)  # вызвать клаву
@@ -136,7 +129,7 @@ def menu_select_step(message, data):
 
 def print_instruction_step(message, instruction, data, case, path):
     data = data
-    if "src" in path:
+    if "src1" in path:
         count_of_img = img_d.countImg(path)
         print(f"В папке {path}\n{count_of_img} файла")
         instruction_list = str(instruction).split("(рис)")
@@ -176,18 +169,6 @@ def print_instruction_step(message, instruction, data, case, path):
             bot.reply_to(message, "Инструкция или изображение отсутствует")
             #bot.send_message(message.chat.id, instruction, parse_mode="HTML", disable_notification=True)
             main_menu_select_step(message)
-    #elif 'https://' in instruction:
-        #doc_body = googleRead.get_document_body(instruction)
-        #inline_object = googleRead.get_inline_object(instruction)
-        #instruction_text_list = googleRead.read_text(doc_body)
-        #instruction_img_list = googleRead.get_img(doc_body, inline_object)
-        #total_list = googleRead.join_total_list(instruction_text_list, instruction_img_list)
-        #for item in total_list:
-            #if item.count('googleusercontent') == 0:
-                #bot.send_message(message.chat.id, item, disable_notification=True, parse_mode="HTML")
-            #else:
-                #bot.send_photo(message.chat.id, item)
-
     else:
         if instruction != "":
             bot.send_message(message.chat.id, instruction, parse_mode="HTML", disable_notification=True)
@@ -232,13 +213,17 @@ def final_process_select_step(message, data):
             bot.reply_to(message, 'Такого раздела пока нет')
             main_menu_select_step(message)
 
+#def error_polling(message):
+    #bot.send_message(message.chat.id, "Подключение восстановлено")
 
-if __name__ == "__main__":
-    bot.polling()
 
-#Команды Git
-
-#git add .
-#git commit -m "*"
-#git push
-#git push heroku main
+if __name__ == '__main__':
+    try:
+        #Сохраняет действия пользователя при перезапуске
+        #bot.enable_save_next_step_handlers(delay=200)
+        #bot.load_next_step_handlers()
+        #bot.get_updates(timeout=50)
+        bot.polling(none_stop=True, interval=0, timeout=50, long_polling_timeout=100)
+        pass
+    except Exception as e:
+        print(e)
