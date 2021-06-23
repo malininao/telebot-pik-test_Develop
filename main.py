@@ -4,6 +4,8 @@ import os
 from data_functions import getData
 from google_module import GoogleDocs, GoogleDocsRead, GoogleSheets
 import logging
+from datetime import datetime
+from recode_instriction_name import DecoderTableName
 
 
 # не забуд прописать в терминал команду pip install pytelegrambotapi (если у тебя мак то pip3, а не pip)
@@ -28,17 +30,24 @@ bot = telebot.TeleBot(TOKEN)
 # функция заполняет клавиатуру которая генерируется из базы данных (только главное меню)
 # telebot.logger.setLevel(logging.DEBUG)
 
+def get_date_time():
+    date = f'{datetime.now().date().day}.{datetime.now().date().month}.{datetime.now().date().year}'
+    time = f'{datetime.now().time().hour}:{datetime.now().time().minute}:{datetime.now().time().second}'
+    date_time = f'{time} {date}'
+    return date_time
+
+
 @bot.message_handler(commands=['start'])
 def start(message):
-    #set_job_email(message)
-    main_menu_select_step(message)
+    set_job_email(message)
+    #main_menu_select_step(message)
 
 
 @bot.message_handler(content_types=['text'])
 def reload_bot(message):
     #print("1")
-    #set_job_email(message)
-    main_menu_select_step(message)
+    set_job_email(message)
+    #main_menu_select_step(message)
 
 
 def set_job_email(message):
@@ -69,6 +78,7 @@ def add_user_in_base(message, user_data, sheet_values):
         bot.send_message(message.chat.id, "Данные записываются...")
         sheet_data.add_user_in_base(user_data, message.chat.id, message.chat.username,
                                     "База пользователей", message.text, sheet_values)
+
         telebot.logger.setLevel(logging.DEBUG)
         print("4")
         main_menu_select_step(message)
@@ -92,15 +102,16 @@ def main_menu_select_step(message):
                            message_list[0],
                            reply_markup=markup, disable_notification=True)  # вызвать клаву
     print("6")
-    bot.register_next_step_handler(msg, process_select_step, data)
+    bot.register_next_step_handler(msg, process_select_step, data, 't1')
 
 
 # выбор дальнейших шагов в по таблицам БД
-def process_select_step(message, data):
+def process_select_step(message, data, selected_table):
     # пустые массивы в начале функций нужны для того что при каждом вызове функции из значения заполнялись заново
     next_step = []
     texts = []
     last_step = []
+
     try:
         for item in data:  # пробег по массиву из кортежей, получаем следующую т
             # аблицу, текст кнопок, и предыдущую таблицу
@@ -123,7 +134,7 @@ def process_select_step(message, data):
             table = next_step[index]
             if next_step[index] == '<-':
                 data = getData(last_table)
-                menu_select_step(message, data)
+                menu_select_step(message, data, last_table)
             else:
                 if next_step[index] == 't1':
                     case = 1
@@ -131,19 +142,22 @@ def process_select_step(message, data):
                     case = 2
                 else:
                     case = 3
-
+                last_data = data
                 data = getData(table)
-                print_instruction_step(message, instruction, data, case)
+                if case == 3:
+                    print_instruction_step(message, instruction, data, case, table)
+                else:
+                    print_instruction_step(message, instruction, data, case, selected_table)
 
         else:  # в любом другом случае получаем данные о дальнейшем и предыдущем шаге
             # для вызова шаблонной функции генерации кнопок
             print(table)
             if table == "<-":
                 data = getData(last_table)
-                menu_select_step(message, data)
+                menu_select_step(message, data, table)
             else:
                 data = getData(table)
-                menu_select_step(message, data)
+                menu_select_step(message, data, table)
     except Exception as e:
         if message.text == "В НАЧАЛО":
             reload_bot(message)
@@ -159,7 +173,7 @@ def process_select_step(message, data):
 # Обычная функция генерации кнопок, ничего примечательного
 
 
-def menu_select_step(message, data):
+def menu_select_step(message, data, table):
     markup = types.ReplyKeyboardMarkup(one_time_keyboard=True, resize_keyboard=True, row_width=2)
     message_list = []
     for item in data:
@@ -172,14 +186,25 @@ def menu_select_step(message, data):
     msg = bot.send_message(message.chat.id,
                            message_list[0],
                            reply_markup=markup, disable_notification=True)  # вызвать клаву
-    bot.register_next_step_handler(msg, process_select_step, data)
+    bot.register_next_step_handler(msg, process_select_step, data, table)
 
 # функция отвечает за вывод текста(далее изображений) инструкции
 
 
-def print_instruction_step(message, instruction, data, case):
+def print_instruction_step(message, instruction, data, case, selected_table):
     data = data
+    print(selected_table)
+
+    if case == 3:
+        instruction_name = DecoderTableName.decode_text(selected_table)
+    else:
+        instruction_name = DecoderTableName.decode_text(selected_table) + f'->{message.text}'
+
+    values = [[message.chat.id, instruction_name, get_date_time()]]
+
     if instruction != "":
+        if message.text != "Спасибо, инструкция помогла" and message.text != "Инструкция не помогла":
+            sheet_data.add_interaction(values, 'База запросов')
         if 'https://docs.google.com/' in instruction:
             doc = GoogleDocs(instruction)
             total_list = GoogleDocsRead(doc_body=doc.get_document_body(), inline_objects=doc.get_inline_object()
@@ -194,18 +219,21 @@ def print_instruction_step(message, instruction, data, case):
     if case == 1:
         if message.text == "Спасибо, инструкция помогла":
             effective = True
+            instruction_name = DecoderTableName.decode_text(selected_table)
+            values = [[message.chat.id, instruction_name, get_date_time()]]
+            sheet_data.add_interaction(values, spreadsheet_name='База полезных запросов')
         else:
             effective = False
-        sheet_data.add_interaction_point(user_name=message.chat.username, effective=effective, spreadsheets_name='База')
+        sheet_data.add_interaction_point(user_name=message.chat.id, effective=effective, spreadsheets_name='База')
         reload_bot(message)
     elif case == 2:
-        final_menu_select_step(message, data)
+        final_menu_select_step(message, data, values)
     elif case == 3:
-        menu_select_step(message, data)
+        menu_select_step(message, data, selected_table)
 
 
 # Последний шаг, генерируются кнопки для завершения работы (вопрос: помогло или нет?)
-def final_menu_select_step(message, data):
+def final_menu_select_step(message, data, values):
     markup = types.ReplyKeyboardMarkup(one_time_keyboard=True, resize_keyboard=True, row_width=2)
     message_list = []
     for item in data:
@@ -215,11 +243,11 @@ def final_menu_select_step(message, data):
     msg = bot.send_message(message.chat.id,
                            message_list[0],
                            reply_markup=markup, disable_notification=True)  # вызвать клаву
-    bot.register_next_step_handler(msg, final_process_select_step, data)
+    bot.register_next_step_handler(msg, final_process_select_step, data, values)
 
 
 # выводится тескт с дальнейшими указаниями если инструкция не помогла. (в дальнейшем здесь будет вызываться запись в БД)
-def final_process_select_step(message, data):
+def final_process_select_step(message, data, values):
     texts = []
     answers = []
     try:
@@ -229,9 +257,11 @@ def final_process_select_step(message, data):
         index = texts.index(message.text)
         if message.text == "Да":
             effective = True
+
+            sheet_data.add_interaction(values, spreadsheet_name='База полезных запросов')
         else:
             effective = False
-        sheet_data.add_interaction_point(user_name=message.chat.username, effective=effective, spreadsheets_name='База')
+        sheet_data.add_interaction_point(user_name=message.chat.id, effective=effective, spreadsheets_name='База')
         bot.send_message(message.chat.id, answers[index], disable_notification=True)
         reload_bot(message)
     except Exception as e:

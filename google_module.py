@@ -226,9 +226,9 @@ class GoogleSheets:
         except:
             return "Пользователя нет в базе", user_name_list
 
-    def add_user(self, user_name, spreadsheets_name):
+    def add_user(self, user_id, spreadsheets_name):
         sheet = services_sheet.spreadsheets()
-        user_data = self.get_user_data(user_name, spreadsheets_name)
+        user_data = self.get_user_data(user_id, spreadsheets_name)
         date = f'{datetime.now().date().day}.{datetime.now().date().month}.{datetime.now().date().year}'
         if user_data[0] == "Пользователя нет в базе":
             if 'Empty value' in user_data[1]:
@@ -240,10 +240,10 @@ class GoogleSheets:
             request = sheet.values().update(spreadsheetId=self.get_sheets_from_url(),
                                             range=f'{spreadsheets_name}!A{index}',
                                             valueInputOption='USER_ENTERED',
-                                            body={'values': [[user_name, f"{date}", 0, 0, 'Empty', 'Empty']]})
+                                            body={'values': [[user_id, f"{date}", 0, 0, 'Empty', 'Empty']]})
             request.execute()
         else:
-            print(f"Такой пользователь уже создан. Строка {self.get_user_data(user_name, spreadsheets_name)[1] + 1}")
+            print(f"Такой пользователь уже создан. Строка {self.get_user_data(user_id, spreadsheets_name)[1] + 1}")
 
     def add_interaction_point(self, user_name, effective, spreadsheets_name):
         self.add_user(user_name, spreadsheets_name)
@@ -265,16 +265,21 @@ class GoogleSheets:
                                         body={'values': values})
         request.execute()
 
+    def add_interaction(self, values, spreadsheet_name):
 
-    def add_interaction_point_get_instruction(self, user_name):
+        '''
+
+        function write data in chosen google sheet's list
+        :param values: list in list example: [[variable_1, variable_2 ... variable_N]]
+        :param spreadsheet_name: google sheet's list name
+        :return:
+
+        '''
+
         sheet = services_sheet.spreadsheets()
-        date = f'{datetime.now().date().day}.{datetime.now().date().month}.{datetime.now().date().year}'
-        time = f'{datetime.now().time().hour}:{datetime.now().time().minute}:{datetime.now().time().second}'
-        request = sheet.values().append(spreadsheetId = self.get_sheets_from_url(), range=f'База!:A2',
-                                        valueInputOption='INSERT_ROW', body={})
-
-
-        pass
+        request = sheet.values().append(spreadsheetId = self.get_sheets_from_url(), range=f'{spreadsheet_name}!A2',
+                                        valueInputOption='USER_ENTERED', insertDataOption='INSERT_ROWS', body={'values': values})
+        request.execute()
 
     def get_sheets_values_from_base(self, spreadsheets_name, start_row='', end_row='', start_column='A', end_column='ZZ'):
         sheet = services_sheet.spreadsheets()
