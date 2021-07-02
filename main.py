@@ -236,6 +236,9 @@ def print_instruction_step(message, instruction, data, case, selected_table, ins
                     bot.send_photo(message.chat.id, item, disable_notification=True)
         else:
             bot.send_message(message.chat.id, instruction, disable_notification=True, parse_mode="HTML")
+    base_values = sheet_data.get_sheets_values_from_base(REQUEST_BASE, start_row='2')
+    base_data = sheet_data.get_dict(base_values, DICTIONARY_INSTRUCT_REQUEST)
+    instruction_data = sheet_data.get_data_from_base(instruction_token, base_data, KEY_INSTRUCT_PARAM)
     if case == 1:
         print(instruction_token)
         print("Тут")
@@ -243,18 +246,12 @@ def print_instruction_step(message, instruction, data, case, selected_table, ins
             effective = True
         else:
             effective = False
-        base_values = sheet_data.get_sheets_values_from_base(REQUEST_BASE, start_row='2')
-        base_data = sheet_data.get_dict(base_values, DICTIONARY_INSTRUCT_REQUEST)
-        instruction_data = sheet_data.get_data_from_base(instruction_token, base_data, KEY_INSTRUCT_PARAM)
         sheet_data.add_rating_instruction(instruction_data, REQUEST_BASE, effective)
         reload_bot(message)
     elif case == 2:
         final_menu_select_step(message, data, instruction_token)
     elif case == 3:
         if message.text != 'Текст':
-            base_values = sheet_data.get_sheets_values_from_base(REQUEST_BASE, start_row='2')
-            base_data = sheet_data.get_dict(base_values, DICTIONARY_INSTRUCT_REQUEST)
-            instruction_data = sheet_data.get_data_from_base(instruction_token, base_data, KEY_INSTRUCT_PARAM)
             sheet_data.add_rating_instruction(instruction_data, REQUEST_BASE, False)
             instruction_token = get_instruction_token(16)
         menu_select_step(message, data, selected_table, instruction_token)
