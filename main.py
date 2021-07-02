@@ -43,7 +43,7 @@ def get_instruction_token(length):
     letters_and_digits = string.ascii_letters + string.digits
     instriction_token = ''.join(secrets.choice(
         letters_and_digits) for i in range(length))
-    print("Cryptic Random string of length", length, "is:", instriction_token)
+    print("ID обращения ", length, "16 символов:", instriction_token)
     return instriction_token
 
 
@@ -219,7 +219,15 @@ def print_instruction_step(message, instruction, data, case, selected_table, ins
                     bot.send_photo(message.chat.id, item, disable_notification=True)
         else:
             bot.send_message(message.chat.id, instruction, disable_notification=True, parse_mode="HTML")
-
+    dictionary = {
+        'instruction_token': 'none',
+        'user_id': 'none',
+        'path': 'none',
+        'end_point': 'none',
+        'date': 'none',
+        'time': 'none',
+        'rating': 'none'
+    }
     if case == 1:
         print(instruction_token)
         print("Тут")
@@ -228,15 +236,6 @@ def print_instruction_step(message, instruction, data, case, selected_table, ins
         else:
             effective = False
         base_values = sheet_data.get_sheets_values_from_base('Демо', start_row='2')
-        dictionary = {
-            'instruction_token': 'none',
-            'user_id': 'none',
-            'path': 'none',
-            'end_point': 'none',
-            'date': 'none',
-            'time': 'none',
-            'rating': 'none'
-        }
         base_data = sheet_data.get_dict(base_values, dictionary)
         instruction_data = sheet_data.get_data_from_base(instruction_token, base_data, 'instruction_token')
         sheet_data.add_rating_instruction(instruction_data, 'Демо', effective)
@@ -245,6 +244,10 @@ def print_instruction_step(message, instruction, data, case, selected_table, ins
         final_menu_select_step(message, data, instruction_token)
     elif case == 3:
         if message.text != 'Текст':
+            base_values = sheet_data.get_sheets_values_from_base('Демо', start_row='2')
+            base_data = sheet_data.get_dict(base_values, dictionary)
+            instruction_data = sheet_data.get_data_from_base(instruction_token, base_data, 'instruction_token')
+            sheet_data.add_rating_instruction(instruction_data, 'Демо', False)
             instruction_token = get_instruction_token(16)
         menu_select_step(message, data, selected_table, instruction_token)
 
@@ -306,11 +309,3 @@ if __name__ == "__main__":
         bot.polling(none_stop=True)
     except:
         pass
-
-
-# Команды Git
-
-# git add .
-# git commit -m "*"
-# git push
-# git push heroku main

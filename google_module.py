@@ -1,10 +1,8 @@
-from pprint import pprint
 import httplib2
 import googleapiclient.discovery
 from oauth2client.service_account import ServiceAccountCredentials
 from collections import defaultdict
 import os
-from datetime import datetime
 
 
 def create_keyfile_dict():
@@ -249,7 +247,7 @@ class GoogleSheets:
         try:
             index = id_list.index(str(element_id))
             return parameters[index], int(index), id_list
-        except:
+        except IndexError:
             return "Данных нет в базе", id_list
 
     def add_user_in_base(self, user_data, user_id, user_name, spreadsheets_name, email, values):
