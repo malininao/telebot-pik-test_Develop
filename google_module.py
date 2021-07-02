@@ -247,14 +247,14 @@ class GoogleSheets:
         try:
             index = id_list.index(str(element_id))
             return parameters[index], int(index), id_list
-        except IndexError:
+        except ValueError:
             return "Данных нет в базе", id_list
 
-    def add_user_in_base(self, user_data, user_id, user_name, spreadsheets_name, email, values):
+    def add_user_in_base(self, spacial_data, user_id, user_name, spreadsheets_name, email, values):
         sheet = services_sheet.spreadsheets()
-        if user_data[0] == "Пользователя нет в базе":
-            if 'Empty value' in user_data[1]:
-                index = user_data[1].index('Empty value') + 2
+        if spacial_data[0] == "Данных нет в базе":
+            if 'Empty value' in spacial_data[1]:
+                index = spacial_data[1].index('Empty value') + 2
                 print(f'Пользователь записан в строку: {index}')
             else:
                 index = len(values) + 2
@@ -290,19 +290,8 @@ class GoogleSheets:
 
 
 if __name__ == "__main__":
-    import config
-    base_values = GoogleSheets(config.LINK_URL_SHEETS).get_sheets_values_from_base('Демо', start_row='2')
-    dictionary = {
-        'instruction_token': 'none',
-        'user_id': 'none',
-        'path': 'none',
-        'end_point': 'none',
-        'date': 'none',
-        'time': 'none',
-        'rating': 'none'
-    }
-    base_data = GoogleSheets.get_dict(base_values, dictionary)
-    instruction_data = GoogleSheets.get_data_from_base('ingIheQUY4Az8j2h', base_data, 'instruction_token')
-    values = GoogleSheets.get_massive_from_dict(instruction_data[0])
-    print(GoogleSheets(config.LINK_URL_SHEETS).add_rating_instruction(instruction_data, 'Демо', True))
-    print(values)
+
+
+    new_list = []
+    index = new_list.index(str(1))
+    print(new_list[2])

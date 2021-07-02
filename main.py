@@ -43,12 +43,13 @@ def get_instruction_token(length):
     letters_and_digits = string.ascii_letters + string.digits
     instriction_token = ''.join(secrets.choice(
         letters_and_digits) for i in range(length))
-    print("ID обращения ", length, "16 символов:", instriction_token)
+    print("ID обращения", length, "символов:", instriction_token)
     return instriction_token
 
 
 @bot.message_handler(commands=['start'])
 def start(message):
+
     set_job_email(message)
 
 
@@ -58,6 +59,7 @@ def reload_bot(message):
 
 
 def set_job_email(message):
+
     sheet_values = sheet_data.get_sheets_values_from_base('База пользователей', start_column='A',
                                                           start_row='2', end_column='C')
     users_parameters = {
@@ -66,8 +68,10 @@ def set_job_email(message):
         'email': "Empty value"
     }
     dict = sheet_data.get_dict(sheet_values, users_parameters)
+
     user_data = sheet_data.get_data_from_base(message.chat.id, dict, 'user_id')
-    if user_data[0] == "Пользователя нет в базе":
+
+    if user_data[0] == "Данных нет в базе":
         markup = types.ReplyKeyboardRemove()
         msg = bot.send_message(message.chat.id, "Введите рабочую почту", reply_markup=markup, disable_notification=True)
 
