@@ -1,27 +1,46 @@
-import telebot
-from telebot import types
-import os
-from data_functions import getData
-from google_module import GoogleDocs, GoogleDocsRead, GoogleSheets
-#import logging
 import datetime
-from recode_instriction_name import DecoderTableName
+import logging
+import os
 import secrets
 import string
-import logging
-# не забуд прописать в терминал команду pip install pytelegrambotapi (если у тебя мак то pip3, а не pip)
+
+import telebot
+from telebot import types
+
+from data_functions import getData
+from google_module import GoogleDocs, GoogleDocsRead, GoogleSheets
+from recode_instriction_name import DecoderTableName
 
 logger = telebot.logger
 
+
+def dict_from_string(dict_in_string):
+    first_list = str(dict_in_string).split(',')
+    second_list = [tuple(str(item).split(':')) for item in first_list]
+    third_list = [(key.replace(' ', '', 1), value.replace(' ','',1)) for key, value in second_list]
+    dictionary = {key: value for key, value in third_list}
+    return dictionary
 
 HEROKU = os.environ.get('HEROKU')
 if HEROKU == "True":
     TOKEN = os.environ.get('TOKEN')
     LINK_URL_SHEET = os.environ.get('LINK_URL_SHEET')
+    KEY_USER_PARAM = os.environ.get('KEY_USER_PARAM')
+    USER_BASE = os.environ.get('USER_BASE')
+    KEY_INSTRUCT_PARAM = os.environ.get('KEY_INSTRUCT_PARAM')
+    REQUEST_BASE = os.environ.get('REQUEST_BASE')
+    DICTIONARY_INSTRUCT_REQUEST = dict_from_string(os.environ.get('DICTIONARY_INSTRUCT_REQUEST'))
+    DICTIONARY_USER_REQUEST = dict_from_string(os.environ.get('DICTIONARY_USER_REQUEST'))
 else:
     import config
     TOKEN = config.TOKEN
     LINK_URL_SHEET = config.LINK_URL_SHEETS
+    KEY_USER_PARAM = config.KEY_USER_PARAM
+    USER_BASE = config.USER_BASE
+    KEY_INSTRUCT_PARAM = config.KEY_INSTRUCT_PARAM
+    REQUEST_BASE = config.REQUEST_BASE
+    DICTIONARY_INSTRUCT_REQUEST = dict_from_string(config.DICTIONARY_INSTRUCT_REQUEST)
+    DICTIONARY_USER_REQUEST = dict_from_string(config.DICTIONARY_USER_REQUEST)
 
 sheet_data = GoogleSheets(LINK_URL_SHEET)
 bot = telebot.TeleBot(TOKEN)
@@ -60,16 +79,10 @@ def reload_bot(message):
 
 def set_job_email(message):
 
-    sheet_values = sheet_data.get_sheets_values_from_base('База пользователей', start_column='A',
+    sheet_values = sheet_data.get_sheets_values_from_base(USER_BASE, start_column='A',
                                                           start_row='2', end_column='C')
-    users_parameters = {
-        'user_id': "Empty value",
-        'user_name': "Empty value",
-        'email': "Empty value"
-    }
-    dict = sheet_data.get_dict(sheet_values, users_parameters)
-
-    user_data = sheet_data.get_data_from_base(message.chat.id, dict, 'user_id')
+    dictionary = sheet_data.get_dict(sheet_values, DICTIONARY_USER_REQUEST)
+    user_data = sheet_data.get_data_from_base(message.chat.id, dictionary, KEY_USER_PARAM)
 
     if user_data[0] == "Данных нет в базе":
         markup = types.ReplyKeyboardRemove()
@@ -210,7 +223,7 @@ def print_instruction_step(message, instruction, data, case, selected_table, ins
     if instruction != "":
 
         if message.text != "Спасибо, инструкция помогла" and message.text != "Инструкция не помогла":
-            sheet_data.add_interaction(values, 'Демо')
+            sheet_data.add_interaction(values, REQUEST_BASE)
 
         if 'https://docs.google.com/' in instruction:
             doc = GoogleDocs(instruction)
@@ -223,15 +236,6 @@ def print_instruction_step(message, instruction, data, case, selected_table, ins
                     bot.send_photo(message.chat.id, item, disable_notification=True)
         else:
             bot.send_message(message.chat.id, instruction, disable_notification=True, parse_mode="HTML")
-    dictionary = {
-        'instruction_token': 'none',
-        'user_id': 'none',
-        'path': 'none',
-        'end_point': 'none',
-        'date': 'none',
-        'time': 'none',
-        'rating': 'none'
-    }
     if case == 1:
         print(instruction_token)
         print("Тут")
@@ -239,19 +243,19 @@ def print_instruction_step(message, instruction, data, case, selected_table, ins
             effective = True
         else:
             effective = False
-        base_values = sheet_data.get_sheets_values_from_base('Демо', start_row='2')
-        base_data = sheet_data.get_dict(base_values, dictionary)
-        instruction_data = sheet_data.get_data_from_base(instruction_token, base_data, 'instruction_token')
-        sheet_data.add_rating_instruction(instruction_data, 'Демо', effective)
+        base_values = sheet_data.get_sheets_values_from_base(REQUEST_BASE, start_row='2')
+        base_data = sheet_data.get_dict(base_values, DICTIONARY_INSTRUCT_REQUEST)
+        instruction_data = sheet_data.get_data_from_base(instruction_token, base_data, KEY_INSTRUCT_PARAM)
+        sheet_data.add_rating_instruction(instruction_data, REQUEST_BASE, effective)
         reload_bot(message)
     elif case == 2:
         final_menu_select_step(message, data, instruction_token)
     elif case == 3:
         if message.text != 'Текст':
-            base_values = sheet_data.get_sheets_values_from_base('Демо', start_row='2')
-            base_data = sheet_data.get_dict(base_values, dictionary)
-            instruction_data = sheet_data.get_data_from_base(instruction_token, base_data, 'instruction_token')
-            sheet_data.add_rating_instruction(instruction_data, 'Демо', False)
+            base_values = sheet_data.get_sheets_values_from_base(REQUEST_BASE, start_row='2')
+            base_data = sheet_data.get_dict(base_values, DICTIONARY_INSTRUCT_REQUEST)
+            instruction_data = sheet_data.get_data_from_base(instruction_token, base_data, KEY_INSTRUCT_PARAM)
+            sheet_data.add_rating_instruction(instruction_data, REQUEST_BASE, False)
             instruction_token = get_instruction_token(16)
         menu_select_step(message, data, selected_table, instruction_token)
 
@@ -284,19 +288,10 @@ def final_process_select_step(message, data, instruction_token):
 
         else:
             effective = False
-        base_values = sheet_data.get_sheets_values_from_base('Демо', start_row='2')
-        dictionary = {
-            'instruction_token': 'none',
-            'user_id': 'none',
-            'path': 'none',
-            'end_point': 'none',
-            'date': 'none',
-            'time': 'none',
-            'rating': 'none'
-        }
-        base_data = sheet_data.get_dict(base_values, dictionary)
-        instruction_data = sheet_data.get_data_from_base(instruction_token, base_data, 'instruction_token')
-        sheet_data.add_rating_instruction(instruction_data, spreadsheet_name='Демо', effective=effective)
+        base_values = sheet_data.get_sheets_values_from_base(REQUEST_BASE, start_row='2')
+        base_data = sheet_data.get_dict(base_values, DICTIONARY_INSTRUCT_REQUEST)
+        instruction_data = sheet_data.get_data_from_base(instruction_token, base_data, KEY_INSTRUCT_PARAM)
+        sheet_data.add_rating_instruction(instruction_data, spreadsheet_name=REQUEST_BASE, effective=effective)
         bot.send_message(message.chat.id, answers[index], disable_notification=True)
         reload_bot(message)
     except Exception as e:
