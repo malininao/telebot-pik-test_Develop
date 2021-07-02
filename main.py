@@ -289,7 +289,7 @@ def final_process_select_step(message, data, instruction_token):
         }
         base_data = sheet_data.get_dict(base_values, dictionary)
         instruction_data = sheet_data.get_data_from_base(instruction_token, base_data, 'instruction_token')
-        sheet_data.add_rating_instruction(instruction_data, 'Демо', effective)
+        sheet_data.add_rating_instruction(instruction_data, spreadsheet_name='Демо', effective=effective)
         bot.send_message(message.chat.id, answers[index], disable_notification=True)
         reload_bot(message)
     except Exception as e:
