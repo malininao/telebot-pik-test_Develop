@@ -254,8 +254,8 @@ class GoogleSheets:
     def add_user_in_base(self, spacial_data, user_id, user_name, spreadsheets_name, email, values):
         sheet = services_sheet.spreadsheets()
         if spacial_data[0] == "Данных нет в базе":
-            if 'empty value' in str(spacial_data[1]).lower():
-                index = spacial_data[1].lower().index('empty value') + 2
+            if 'Empty value' in spacial_data[1]:
+                index = spacial_data[1].index('Empty value') + 2
                 print(f'Пользователь записан в строку: {index}')
             else:
                 index = len(values) + 2
