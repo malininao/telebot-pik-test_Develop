@@ -291,8 +291,7 @@ class GoogleSheets:
 
 
 if __name__ == "__main__":
-
-
-    new_list = []
-    index = new_list.index(str(1))
-    print(new_list[2])
+    from .config import LINK_URL_SHEETS
+    from pprint import pprint
+    data = GoogleSheets(LINK_URL_SHEETS).get_sheets_values_from_base('Реестр')
+    pprint(data)
