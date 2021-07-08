@@ -3,12 +3,11 @@ import logging
 import os
 import secrets
 import string
-
 import telebot
 from telebot import types
 
 from data_functions import getData
-from google_module import GoogleDocs, GoogleDocsRead, GoogleSheets
+from google_module import GoogleDocs, GoogleDocsRead, GoogleSheets, DictWorker
 from recode_instriction_name import DecoderTableName
 
 logger = telebot.logger
@@ -81,7 +80,7 @@ def set_job_email(message):
 
     sheet_values = sheet_data.get_sheets_values_from_base(USER_BASE, start_column='A',
                                                           start_row='2', end_column='C')
-    dictionary = sheet_data.get_dict(sheet_values, DICTIONARY_USER_REQUEST)
+    dictionary = DictWorker.generate_dict_from_list_and_dict(sheet_values, DICTIONARY_USER_REQUEST)
     user_data = sheet_data.get_data_from_base(message.chat.id, dictionary, KEY_USER_PARAM)
 
     if user_data[0] == "Данных нет в базе":
@@ -237,7 +236,7 @@ def print_instruction_step(message, instruction, data, case, selected_table, ins
         else:
             bot.send_message(message.chat.id, instruction, disable_notification=True, parse_mode="HTML")
     base_values = sheet_data.get_sheets_values_from_base(REQUEST_BASE, start_row='2')
-    base_data = sheet_data.get_dict(base_values, DICTIONARY_INSTRUCT_REQUEST)
+    base_data = DictWorker.generate_dict_from_list_and_dict(base_values, DICTIONARY_INSTRUCT_REQUEST)
     instruction_data = sheet_data.get_data_from_base(instruction_token, base_data, KEY_INSTRUCT_PARAM)
     if case == 1:
         print(instruction_token)
@@ -286,7 +285,7 @@ def final_process_select_step(message, data, instruction_token):
         else:
             effective = False
         base_values = sheet_data.get_sheets_values_from_base(REQUEST_BASE, start_row='2')
-        base_data = sheet_data.get_dict(base_values, DICTIONARY_INSTRUCT_REQUEST)
+        base_data = DictWorker.generate_dict_from_list_and_dict(base_values, DICTIONARY_INSTRUCT_REQUEST)
         instruction_data = sheet_data.get_data_from_base(instruction_token, base_data, KEY_INSTRUCT_PARAM)
         sheet_data.add_rating_instruction(instruction_data, spreadsheet_name=REQUEST_BASE, effective=effective)
         bot.send_message(message.chat.id, answers[index], disable_notification=True)
