@@ -60,7 +60,7 @@ def get_date_time():
 def get_instruction_token(length):
     letters_and_digits = string.ascii_letters + string.digits
     instriction_token = ''.join(secrets.choice(
-        letters_and_digits) for i in range(length))
+        letters_and_digits) for _ in range(length))
     print("ID обращения", length, "символов:", instriction_token)
     return instriction_token
 
@@ -239,8 +239,6 @@ def print_instruction_step(message, instruction, data, case, selected_table, ins
     base_data = DictWorker.generate_dict_from_list_and_dict(base_values, DICTIONARY_INSTRUCT_REQUEST)
     instruction_data = sheet_data.get_data_from_base(instruction_token, base_data, KEY_INSTRUCT_PARAM)
     if case == 1:
-        print(instruction_token)
-        print("Тут")
         if message.text == "Спасибо, инструкция помогла":
             effective = True
         else:

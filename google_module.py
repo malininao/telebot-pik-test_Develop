@@ -269,10 +269,7 @@ class GoogleSheets:
         if instruction_data[0] == 'Данных нет в базе':
             pass
         else:
-            if not effective:
-                instruction_data[0]['rating'] = 'Отрицательная'
-            elif effective:
-                instruction_data[0]['rating'] = 'Положительная'
+            instruction_data[0]['rating'] = 'Положительная' if effective else 'Отрицательная'
             sheet = services_sheet.spreadsheets()
             values = [DictWorker.get_massive_from_dict(instruction_data[0])]
             index = instruction_data[1] + 2
@@ -289,18 +286,18 @@ class DictWorker:
         return [element[key] for key, value in element.items()]
 
     @staticmethod
-    def generate_dict_from_list_and_dict(values, dictionary):
+    def generate_dict_from_list_and_dict(data_list, dictionary):
 
         '''
-        :param sheet_values:
+        :param data_list:
         :param dictionary:
         :return:
         '''
 
         assert type(dictionary) is dict, "dictionary должен быть словарем"
-        assert type(values) is list, 'values должен быть списком'
+        assert type(data_list) is list, 'values должен быть списком'
         dict_list = []
-        for item in values:
+        for item in data_list:
             new_dictionary = {key: value for key, value in dictionary.items()}
             if item:
                 i = 0
@@ -323,7 +320,7 @@ class DictWorker:
         return [{keys[i]: item for i, item in enumerate(value)} for value in values]
 
     @staticmethod
-    def find_elements_in_dict(key, keys, values):
+    def find_elements_in_dicts_list(key, keys, values):
 
         '''
         :param key: string
@@ -356,5 +353,6 @@ if __name__ == "__main__":
     #print(d)
     pprint(DictWorker.generate_dict(keys[0], values))
     d = DictWorker.generate_dict(keys[0], values)
-    print(DictWorker.find_elements_in_dict('Статус', keys[0], d))
+    print(DictWorker.find_elements_in_dicts_list('Статус', keys[0], d))
+
 
