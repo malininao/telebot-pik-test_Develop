@@ -90,6 +90,9 @@ class DataBaseFunctions:
             cur.execute('''DROP TABLE %s''' % table_name)
             print('table deleted')
 
+
+class ImportFunction:
+
     @staticmethod
     def import_in_google_sheet(SHEET_URL: str, spreadsheet_name: str, table_name: str):
         data = DataBaseFunctions.select_data(table_name)
@@ -103,8 +106,6 @@ def get_data(table):
     for item in data_list:
         data.append(item)
     return data
-
-
 
 
 def update_rating(instriction_token, rating):
@@ -136,7 +137,7 @@ class DataCash:
 
 
 if __name__ == "__main__":
-    DataBaseFunctions.import_in_google_sheet(config.LINK_URL_SHEETS, 'Демо', 'requests')
+    ImportFunction.import_in_google_sheet(config.LINK_URL_SHEETS, 'Демо', 'requests')
 
 
 
