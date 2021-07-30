@@ -148,11 +148,6 @@ class MarkedRequestCash(DataCash):
             pass
 
 
-
-
-
-
-
 if __name__ == "__main__":
     ImportFunction.import_in_google_sheet(config.LINK_URL_SHEETS, 'Демо', 'requests')
 
