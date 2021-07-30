@@ -343,16 +343,6 @@ if __name__ == "__main__":
     import config
     from pprint import pprint
     sheet = GoogleSheets(config.LINK_URL_SHEETS)
-    data = GoogleSheets(config.LINK_URL_SHEETS).get_sheets_values_from_base('Реестр', start_row='2')
-    links = GoogleSheets(config.LINK_URL_SHEETS).get_spreadsheet('Реестр', start_row='4', start_column='G',
-                                                                             end_column='G',
-                                                    fields='sheets/data/rowData/values/hyperlink', param='hyperlink')
-    #pprint(links[0])
-    keys = sheet.get_sheets_values_from_base('Реестр', start_row='2', end_row='2')
-    values = sheet.get_sheets_values_from_base('Реестр', start_row='4')
-    #print(d)
-    pprint(DictWorker.generate_dict(keys[0], values))
-    d = DictWorker.generate_dict(keys[0], values)
-    print(DictWorker.find_elements_in_dicts_list('Статус', keys[0], d))
+    sheet.add_interaction(values=[[i for i in range(6)]for _ in range(3)], spreadsheet_name='Демо')
 
 
