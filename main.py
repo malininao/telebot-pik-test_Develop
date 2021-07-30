@@ -7,12 +7,12 @@ import telebot
 from telebot import types
 from pprint import pprint
 
-from data_functions import get_data, update_rating, DataCash
+from data_functions import get_data, UnmarkedRequestCash,  MarkedRequestCash
 from google_module import GoogleDocs, GoogleDocsRead, GoogleSheets, DictWorker
 from recode_instriction_name import DecoderTableName
 
-writer_data = DataCash()
-rating_data = DataCash()
+writer_data = UnmarkedRequestCash()
+rating_data = MarkedRequestCash()
 logger = telebot.logger
 
 
@@ -59,13 +59,24 @@ def get_date_time():
     return date, time
 
 
-def get_instruction_token(length):
-    letters_and_digits = string.ascii_letters + string.digits
-    instriction_token = ''.join(secrets.choice(
-        letters_and_digits) for _ in range(length))
-    print("ID обращения", length, "символов:", instriction_token)
-    return instriction_token
+class RequestToken:
 
+    def __init__(self, length=16, token=''):
+        self.length = length
+        self.token = token
+
+    def set_token(self):
+        letters_and_digits = string.ascii_letters + string.digits
+        self.token = ''.join(secrets.choice(
+            letters_and_digits) for _ in range(self.length))
+        print("ID обращения", self.length, "символов:", self.token)
+
+    def refresh_token(self):
+        self.set_token()
+
+
+instruction_token = RequestToken()
+instruction_token.set_token()
 
 @bot.message_handler(commands=['start'])
 def start(message):
@@ -76,6 +87,7 @@ def start(message):
 def reload_bot(message):
     try:
         writer_data.write_values('requests', max_count_element=2)
+        rating_data.update_instruction_rating(max_count_element=2)
     except Exception as e:
         print(f"Data wasn't writen, error: {e}")
     set_job_email(message)
@@ -111,7 +123,7 @@ def add_user_in_base(message, user_data, sheet_values):
 
 
 def main_menu_select_step(message):
-    instruction_token = get_instruction_token(16)
+    instruction_token.refresh_token()
     data = get_data('t1')
     markup = types.ReplyKeyboardMarkup(one_time_keyboard=True, resize_keyboard=True, row_width=2)
     message_list = []
@@ -124,11 +136,11 @@ def main_menu_select_step(message):
     msg = bot.send_message(message.chat.id,
                            message_list[0],
                            reply_markup=markup, disable_notification=True)  # вызвать клаву
-    bot.register_next_step_handler(msg, process_select_step, data, 't1', instruction_token)
+    bot.register_next_step_handler(msg, process_select_step, data, 't1')
 
 
 # выбор дальнейших шагов в по таблицам БД
-def process_select_step(message, data, selected_table, instruction_token):
+def process_select_step(message, data, selected_table):
     # пустые массивы в начале функций нужны для того что при каждом вызове функции из значения заполнялись заново
     next_step = []
     texts = []
@@ -156,7 +168,7 @@ def process_select_step(message, data, selected_table, instruction_token):
             table = next_step[index]
             if next_step[index] == '<-':
                 data = get_data(last_table)
-                menu_select_step(message, data, last_table, instruction_token)
+                menu_select_step(message, data, last_table)
             else:
                 if next_step[index] == 't1':
                     case = 1
@@ -166,19 +178,19 @@ def process_select_step(message, data, selected_table, instruction_token):
                     case = 3
                 data = get_data(table)
                 if case == 3:
-                    print_instruction_step(message, instruction, data, case, table, instruction_token)
+                    print_instruction_step(message, instruction, data, case, table)
                 else:
-                    print_instruction_step(message, instruction, data, case, selected_table, instruction_token)
+                    print_instruction_step(message, instruction, data, case, selected_table)
 
         else:  # в любом другом случае получаем данные о дальнейшем и предыдущем шаге
             # для вызова шаблонной функции генерации кнопок
             print(table)
             if table == "<-":
                 data = get_data(last_table)
-                menu_select_step(message, data, table, instruction_token)
+                menu_select_step(message, data, table)
             else:
                 data = get_data(table)
-                menu_select_step(message, data, table, instruction_token)
+                menu_select_step(message, data, table)
     except Exception as e:
         if message.text == "В НАЧАЛО":
             reload_bot(message)
@@ -194,7 +206,7 @@ def process_select_step(message, data, selected_table, instruction_token):
 # Обычная функция генерации кнопок, ничего примечательного
 
 
-def menu_select_step(message, data, table, instruction_token):
+def menu_select_step(message, data, table):
     markup = types.ReplyKeyboardMarkup(one_time_keyboard=True, resize_keyboard=True, row_width=2)
     message_list = []
     for item in data:
@@ -207,12 +219,12 @@ def menu_select_step(message, data, table, instruction_token):
     msg = bot.send_message(message.chat.id,
                            message_list[0],
                            reply_markup=markup, disable_notification=True)  # вызвать клаву
-    bot.register_next_step_handler(msg, process_select_step, data, table, instruction_token)
+    bot.register_next_step_handler(msg, process_select_step, data, table)
 
 # функция отвечает за вывод текста(далее изображений) инструкции
 
 
-def print_instruction_step(message, instruction, data, case, selected_table, instruction_token):
+def print_instruction_step(message, instruction, data, case, selected_table):
     data = data
     print(selected_table)
 
@@ -221,9 +233,9 @@ def print_instruction_step(message, instruction, data, case, selected_table, ins
     else:
         instruction_name = DecoderTableName.decode_text(selected_table) + f'->{message.text}'
 
-    data_list = (instruction_token, str(message.chat.id), instruction_name, message.text, get_date_time()[0],
+    data_list = (instruction_token.token, str(message.chat.id), instruction_name, message.text, get_date_time()[0],
                get_date_time()[1], "Без оценки")
-    full_data = instruction_token, data_list
+    full_data = instruction_token.token, data_list
 
     if instruction != "":
 
@@ -232,13 +244,10 @@ def print_instruction_step(message, instruction, data, case, selected_table, ins
             pass
             #insert_data(values)
 
-
-
         if 'https://docs.google.com/' in instruction:
-            list_data_for_write = writer_data.add_value(full_data)
-
-            pprint(list_data_for_write)
-            print(len(list_data_for_write))
+            writer_data.add_value(full_data)
+            pprint(writer_data.values)
+            print(len(writer_data.values))
            # doc = GoogleDocs(instruction)
             #total_list = GoogleDocsRead(doc_body=doc.get_document_body(), inline_objects=doc.get_inline_object()
                              #           ).join_total_list()
@@ -257,19 +266,27 @@ def print_instruction_step(message, instruction, data, case, selected_table, ins
             rating = 'Положительная'
         else:
             rating = 'Отрицательная'
-        #update_rating(instruction_token, rating)
+
+        data_lists = [[item[0], [val for val in item[1]]] for item in writer_data.values]
+        for index, item in enumerate(writer_data.values):
+            if instruction_token.token in item[0]:
+                print(instruction_token.token in item[0])
+                data_lists[index][1][6] = rating
+                rating_data.add_value(data_lists[index])
+            else:
+                data_lists[-1][1][6] = rating
+                rating_data.add_value(data_lists[-1][1])
         reload_bot(message)
     elif case == 2:
-        final_menu_select_step(message, data, instruction_token)
+        final_menu_select_step(message, data)
     elif case == 3:
         if message.text != 'Текст':
-
-            instruction_token = get_instruction_token(16)
-        menu_select_step(message, data, selected_table, instruction_token)
+            instruction_token.refresh_token()
+        menu_select_step(message, data, selected_table)
 
 
 # Последний шаг, генерируются кнопки для завершения работы (вопрос: помогло или нет?)
-def final_menu_select_step(message, data, instruction_token):
+def final_menu_select_step(message, data):
     markup = types.ReplyKeyboardMarkup(one_time_keyboard=True, resize_keyboard=True, row_width=2)
     message_list = []
     for item in data:
@@ -279,11 +296,11 @@ def final_menu_select_step(message, data, instruction_token):
     msg = bot.send_message(message.chat.id,
                            message_list[0],
                            reply_markup=markup, disable_notification=True)  # вызвать клаву
-    bot.register_next_step_handler(msg, final_process_select_step, data, instruction_token)
+    bot.register_next_step_handler(msg, final_process_select_step, data)
 
 
 # выводится тескт с дальнейшими указаниями если инструкция не помогла. (в дальнейшем здесь будет вызываться запись в БД)
-def final_process_select_step(message, data, instruction_token):
+def final_process_select_step(message, data):
     texts = []
     answers = []
     try:
@@ -295,7 +312,17 @@ def final_process_select_step(message, data, instruction_token):
             rating = 'Положительная'
         else:
             rating = 'Отрицательная'
-        #update_rating(instruction_token, rating)
+
+        data_lists = [[item[0], [val for val in item[1]]] for item in writer_data.values]
+        for index, item in enumerate(writer_data.values):
+            if instruction_token.token in item[0]:
+                print(instruction_token.token in item[0])
+                data_lists[index][1][6] = rating
+                rating_data.add_value(data_lists[index])
+            else:
+                data_lists[-1][1][6] = rating
+                rating_data.add_value(data_lists[-1][1])
+        pprint(rating_data.values)
         bot.send_message(message.chat.id, answers[index], disable_notification=True)
         reload_bot(message)
     except Exception as e:

@@ -83,20 +83,30 @@ class DataBaseFunctions:
             print('table created')
 
     @staticmethod
-    def drop_table(table_name):
+    def drop_table(table_name: str):
         with connect(**params) as conn:
             print('connection establish')
             cur = conn.cursor()
             cur.execute('''DROP TABLE %s''' % table_name)
             print('table deleted')
 
+    @staticmethod
+    def update_instruction_rating(data):
+        with connect(**params) as conn:
+            cur = conn.cursor()
+            for item in data:
+                cur.execute(f'''UPDATE requests 
+                                SET rating = %s 
+                                WHERE request_token = %s''' % (item[1][6], item[0]))
+            print(f'request data with token {item[0]} was updated')
+
 
 class ImportFunction:
 
     @staticmethod
-    def import_in_google_sheet(SHEET_URL: str, spreadsheet_name: str, table_name: str):
+    def import_in_google_sheet(sheet_url: str, spreadsheet_name: str, table_name: str):
         data = DataBaseFunctions.select_data(table_name)
-        GoogleSheets(SHEET_URL).add_interaction(spreadsheet_name=spreadsheet_name, values=data)
+        GoogleSheets(sheet_url).add_interaction(spreadsheet_name=spreadsheet_name, values=data)
         DataBaseFunctions.recreate_table(table_name)
 
 
@@ -108,15 +118,6 @@ def get_data(table):
     return data
 
 
-def update_rating(instriction_token, rating):
-    with connect(**params) as conn:
-        cur = conn.cursor()
-        cur.execute(f'''UPDATE requests 
-                        SET rating = %s 
-                        WHERE request_token = %s''' % (rating, instriction_token))
-        print(f'request data with token {instriction_token} was updated')
-
-
 class DataCash:
 
     def __init__(self):
@@ -126,12 +127,28 @@ class DataCash:
         self.values.append(value)
         return self.values
 
-    def write_values(self, table_name, max_count_element):
+
+class UnmarkedRequestCash(DataCash):
+
+    def write_values(self, table_name, max_count_element=20):
         if len(self.values) >= max_count_element:
             DataBaseFunctions.insert_data_in_base_by_token(self.values, table_name)
             self.values = []
         else:
             pass
+
+
+class MarkedRequestCash(DataCash):
+
+    def update_instruction_rating(self, max_count_element=20):
+        if len(self.values) >= max_count_element:
+            DataBaseFunctions.update_instruction_rating(self.values)
+            self.values = []
+        else:
+            pass
+
+
+
 
 
 
