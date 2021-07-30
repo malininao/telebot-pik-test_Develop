@@ -87,7 +87,7 @@ class DataBaseFunctions:
         with connect(**params) as conn:
             print('connection establish')
             cur = conn.cursor()
-            cur.execute('''DROP TABLE %s''' % table_name)
+            cur.execute('''DROP TABLE %s''', table_name)
             print('table deleted')
 
     @staticmethod
@@ -97,8 +97,8 @@ class DataBaseFunctions:
             for item in data:
                 cur.execute(f'''UPDATE requests 
                                 SET rating = %s 
-                                WHERE request_token = %s''' % (item[1][6], item[0]))
-            print(f'request data with token {item[0]} was updated')
+                                WHERE request_token = %s''', (item[1][6], item[0]))
+                print(f'request data with token {item[0]} was updated')
 
 
 class ImportFunction:

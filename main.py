@@ -86,8 +86,8 @@ def start(message):
 @bot.message_handler(content_types=['text'])
 def reload_bot(message):
     try:
-        writer_data.write_values('requests', max_count_element=2)
-        rating_data.update_instruction_rating(max_count_element=2)
+        writer_data.write_values('requests', max_count_element=5)
+        rating_data.update_instruction_rating(max_count_element=5)
     except Exception as e:
         print(f"Data wasn't writen, error: {e}")
     set_job_email(message)
@@ -261,26 +261,33 @@ def print_instruction_step(message, instruction, data, case, selected_table):
     #base_values = sheet_data.get_sheets_values_from_base(REQUEST_BASE, start_row='2')
     #base_data = DictWorker.generate_dict_from_list_and_dict(base_values, DICTIONARY_INSTRUCT_REQUEST)
     #instruction_data = sheet_data.get_data_from_base(instruction_token, base_data, KEY_INSTRUCT_PARAM)
+    data_lists = [[item[0], [val for val in item[1]]] for item in writer_data.values]
     if case == 1:
         if message.text == "Спасибо, инструкция помогла":
             rating = 'Положительная'
         else:
             rating = 'Отрицательная'
 
-        data_lists = [[item[0], [val for val in item[1]]] for item in writer_data.values]
         for index, item in enumerate(writer_data.values):
+            print(instruction_token.token in item[0])
             if instruction_token.token in item[0]:
-                print(instruction_token.token in item[0])
                 data_lists[index][1][6] = rating
                 rating_data.add_value(data_lists[index])
-            else:
-                data_lists[-1][1][6] = rating
-                rating_data.add_value(data_lists[-1][1])
+            print(len(rating_data.values))
+            # else:
+            # data_lists[-1][1][6] = rating
+            # rating_data.add_value(data_lists[-1][1])
         reload_bot(message)
     elif case == 2:
         final_menu_select_step(message, data)
     elif case == 3:
         if message.text != 'Текст':
+            for index, item in enumerate(writer_data.values):
+                print(instruction_token.token in item[0])
+                if instruction_token.token in item[0]:
+                    data_lists[index][1][6] = 'Отрицательная'
+                    rating_data.add_value(data_lists[index])
+                print(len(rating_data.values))
             instruction_token.refresh_token()
         menu_select_step(message, data, selected_table)
 
@@ -307,7 +314,7 @@ def final_process_select_step(message, data):
         for item in data:
             texts.append(item[1])
             answers.append(item[3])
-        index = texts.index(message.text)
+        index_answer = texts.index(message.text)
         if message.text == "Да":
             rating = 'Положительная'
         else:
@@ -315,15 +322,16 @@ def final_process_select_step(message, data):
 
         data_lists = [[item[0], [val for val in item[1]]] for item in writer_data.values]
         for index, item in enumerate(writer_data.values):
+            print(instruction_token.token in item[0])
             if instruction_token.token in item[0]:
-                print(instruction_token.token in item[0])
                 data_lists[index][1][6] = rating
                 rating_data.add_value(data_lists[index])
-            else:
-                data_lists[-1][1][6] = rating
-                rating_data.add_value(data_lists[-1][1])
+                print(len(rating_data.values))
+            #else:
+                #data_lists[-1][1][6] = rating
+                #rating_data.add_value(data_lists[-1][1])
         pprint(rating_data.values)
-        bot.send_message(message.chat.id, answers[index], disable_notification=True)
+        bot.send_message(message.chat.id, answers[index_answer], disable_notification=True)
         reload_bot(message)
     except Exception as e:
         if message.text == "В НАЧАЛО":
