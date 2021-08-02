@@ -31,6 +31,22 @@ with sqlite3.connect('data.db',  check_same_thread=False) as db:
     cursor = db.cursor()
 
 
+def get_data(table):
+    data = []
+    data_list = cursor.execute(f"""SELECT * FROM {table}""")
+    for item in data_list:
+        data.append(item)
+    return data
+
+
+def get_instruction(field, table):
+    data = []
+    data_list = cursor.execute(f"""SELECT {field} FROM {table}""")
+    for item in data_list:
+        data.append(item)
+    return data
+
+
 class DataBaseFunctions:
 
     @staticmethod
@@ -110,12 +126,7 @@ class ImportFunction:
         DataBaseFunctions.recreate_table(table_name)
 
 
-def get_data(table):
-    data = []
-    data_list = cursor.execute(f"""SELECT * FROM {table}""")
-    for item in data_list:
-        data.append(item)
-    return data
+
 
 
 class DataCash:
@@ -149,7 +160,8 @@ class MarkedRequestCash(DataCash):
 
 
 if __name__ == "__main__":
-    ImportFunction.import_in_google_sheet(config.LINK_URL_SHEETS, 'Демо', 'requests')
+    print(get_instruction('link', 'instruction'))
+    #ImportFunction.import_in_google_sheet(config.LINK_URL_SHEETS, 'Демо', 'requests')
 
 
 

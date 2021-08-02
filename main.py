@@ -7,19 +7,30 @@ import telebot
 from telebot import types
 from pprint import pprint
 
-from data_functions import get_data, UnmarkedRequestCash,  MarkedRequestCash
+from data_functions import get_data, UnmarkedRequestCash,  MarkedRequestCash, get_instruction
 from google_module import GoogleDocs, GoogleDocsRead, GoogleSheets, DictWorker
 from recode_instriction_name import DecoderTableName
 
+# Создается кэш дейсвтий пользователя
 writer_data = UnmarkedRequestCash()
 rating_data = MarkedRequestCash()
 logger = telebot.logger
 
+instruction_link_data = get_instruction('link', 'instruction')
+instruction_link_list = [item[0] for item in instruction_link_data]
+instruction_cash = []
+for item in instruction_link_list:
+    doc = GoogleDocs(item)
+    total_list_item = GoogleDocsRead(doc_body=doc.get_document_body(), inline_objects=doc.get_inline_object()
+              ).join_total_list()
+    instruction_cash.append(total_list_item)
+    print("Loading data %s from %s" % (instruction_link_list.index(item)+1, len(instruction_link_list)))
+print("Instruction cash is ready")
 
 def dict_from_string(dict_in_string):
     first_list = str(dict_in_string).split(',')
     second_list = [tuple(str(item).split(':')) for item in first_list]
-    third_list = [(key.replace(' ', '', 1), value.replace(' ','',1)) for key, value in second_list]
+    third_list = [(key.replace(' ', '', 1), value.replace(' ', '', 1)) for key, value in second_list]
     dictionary = {key: value for key, value in third_list}
     return dictionary
 
@@ -86,8 +97,8 @@ def start(message):
 @bot.message_handler(content_types=['text'])
 def reload_bot(message):
     try:
-        writer_data.write_values('requests', max_count_element=5)
-        rating_data.update_instruction_rating(max_count_element=5)
+        writer_data.write_values('requests', max_count_element=10)
+        rating_data.update_instruction_rating(max_count_element=10)
     except Exception as e:
         print(f"Data wasn't writen, error: {e}")
     set_job_email(message)
@@ -248,16 +259,15 @@ def print_instruction_step(message, instruction, data, case, selected_table):
             writer_data.add_value(full_data)
             pprint(writer_data.values)
             print(len(writer_data.values))
-           # doc = GoogleDocs(instruction)
-            #total_list = GoogleDocsRead(doc_body=doc.get_document_body(), inline_objects=doc.get_inline_object()
-                             #           ).join_total_list()
-            #for item in total_list:
-               # if item.count('googleusercontent') == 0:
-                   # bot.send_message(message.chat.id, item, disable_notification=True, parse_mode="HTML")
-                #else:
-                    #bot.send_photo(message.chat.id, item, disable_notification=True)
-        #else:
-            #bot.send_message(message.chat.id, instruction, disable_notification=True, parse_mode="HTML")
+            index = instruction_link_list.index(instruction)
+            instruction_list = instruction_cash[index]
+            for item in instruction_list:
+                if item.count('googleusercontent') == 0:
+                    bot.send_message(message.chat.id, item, disable_notification=True, parse_mode="HTML")
+                else:
+                    bot.send_photo(message.chat.id, item, disable_notification=True)
+        else:
+            bot.send_message(message.chat.id, instruction, disable_notification=True, parse_mode="HTML")
     #base_values = sheet_data.get_sheets_values_from_base(REQUEST_BASE, start_row='2')
     #base_data = DictWorker.generate_dict_from_list_and_dict(base_values, DICTIONARY_INSTRUCT_REQUEST)
     #instruction_data = sheet_data.get_data_from_base(instruction_token, base_data, KEY_INSTRUCT_PARAM)
