@@ -86,25 +86,26 @@ class RequestToken:
         self.set_token()
 
 
-instruction_token = RequestToken()
-instruction_token.set_token()
-
 @bot.message_handler(commands=['start'])
 def start(message):
-    set_job_email(message)
+    instruction_token = RequestToken()
+    instruction_token.set_token()
+    set_job_email(message, instruction_token)
 
 
 @bot.message_handler(content_types=['text'])
 def reload_bot(message):
+    instruction_token = RequestToken()
     try:
-        writer_data.write_values('requests', max_count_element=10)
-        rating_data.update_instruction_rating(max_count_element=10)
+        writer_data.write_values('requests', max_count_element=5)
+        rating_data.update_instruction_rating(max_count_element=5)
+        instruction_token.refresh_token()
     except Exception as e:
         print(f"Data wasn't writen, error: {e}")
-    set_job_email(message)
+    set_job_email(message, instruction_token)
 
 
-def set_job_email(message):
+def set_job_email(message, instruction_token):
 
     sheet_values = sheet_data.get_sheets_values_from_base(USER_BASE, start_column='A',
                                                           start_row='2', end_column='C')
@@ -114,27 +115,25 @@ def set_job_email(message):
     if user_data[0] == "Данных нет в базе":
         markup = types.ReplyKeyboardRemove()
         msg = bot.send_message(message.chat.id, "Введите рабочую почту", reply_markup=markup, disable_notification=True)
-
-        bot.register_next_step_handler(msg, add_user_in_base, user_data, sheet_values)
+        bot.register_next_step_handler(msg, add_user_in_base, user_data, sheet_values, instruction_token)
 
     else:
-        main_menu_select_step(message)
+        main_menu_select_step(message, instruction_token)
 
 
-def add_user_in_base(message, user_data, sheet_values):
+def add_user_in_base(message, user_data, sheet_values, instruction_token):
     if "@pik.ru" in message.text:
         bot.send_message(message.chat.id, "Данные записываются...")
         sheet_data.add_user_in_base(user_data, message.chat.id, message.chat.username,
                                     "База пользователей", message.text, sheet_values)
         telebot.logger.setLevel(logging.DEBUG)
-        main_menu_select_step(message)
+        main_menu_select_step(message, instruction_token)
     else:
         bot.send_message(message.chat.id, "Почта не зарегистрирована в домене pik.ru")
-        set_job_email(message)
+        set_job_email(message, instruction_token)
 
 
-def main_menu_select_step(message):
-    instruction_token.refresh_token()
+def main_menu_select_step(message, instruction_token):
     data = get_data('t1')
     markup = types.ReplyKeyboardMarkup(one_time_keyboard=True, resize_keyboard=True, row_width=2)
     message_list = []
@@ -147,11 +146,11 @@ def main_menu_select_step(message):
     msg = bot.send_message(message.chat.id,
                            message_list[0],
                            reply_markup=markup, disable_notification=True)  # вызвать клаву
-    bot.register_next_step_handler(msg, process_select_step, data, 't1')
+    bot.register_next_step_handler(msg, process_select_step, data, 't1', instruction_token)
 
 
 # выбор дальнейших шагов в по таблицам БД
-def process_select_step(message, data, selected_table):
+def process_select_step(message, data, selected_table, instruction_token):
     # пустые массивы в начале функций нужны для того что при каждом вызове функции из значения заполнялись заново
     next_step = []
     texts = []
@@ -179,7 +178,7 @@ def process_select_step(message, data, selected_table):
             table = next_step[index]
             if next_step[index] == '<-':
                 data = get_data(last_table)
-                menu_select_step(message, data, last_table)
+                menu_select_step(message, data, last_table, instruction_token)
             else:
                 if next_step[index] == 't1':
                     case = 1
@@ -189,19 +188,19 @@ def process_select_step(message, data, selected_table):
                     case = 3
                 data = get_data(table)
                 if case == 3:
-                    print_instruction_step(message, instruction, data, case, table)
+                    print_instruction_step(message, instruction, data, case, table, instruction_token)
                 else:
-                    print_instruction_step(message, instruction, data, case, selected_table)
+                    print_instruction_step(message, instruction, data, case, selected_table, instruction_token)
 
         else:  # в любом другом случае получаем данные о дальнейшем и предыдущем шаге
             # для вызова шаблонной функции генерации кнопок
             print(table)
             if table == "<-":
                 data = get_data(last_table)
-                menu_select_step(message, data, table)
+                menu_select_step(message, data, table, instruction_token)
             else:
                 data = get_data(table)
-                menu_select_step(message, data, table)
+                menu_select_step(message, data, table, instruction_token)
     except Exception as e:
         if message.text == "В НАЧАЛО":
             reload_bot(message)
@@ -217,7 +216,7 @@ def process_select_step(message, data, selected_table):
 # Обычная функция генерации кнопок, ничего примечательного
 
 
-def menu_select_step(message, data, table):
+def menu_select_step(message, data, table, instruction_token):
     markup = types.ReplyKeyboardMarkup(one_time_keyboard=True, resize_keyboard=True, row_width=2)
     message_list = []
     for item in data:
@@ -230,12 +229,12 @@ def menu_select_step(message, data, table):
     msg = bot.send_message(message.chat.id,
                            message_list[0],
                            reply_markup=markup, disable_notification=True)  # вызвать клаву
-    bot.register_next_step_handler(msg, process_select_step, data, table)
+    bot.register_next_step_handler(msg, process_select_step, data, table, instruction_token)
 
 # функция отвечает за вывод текста(далее изображений) инструкции
 
 
-def print_instruction_step(message, instruction, data, case, selected_table):
+def print_instruction_step(message, instruction, data, case, selected_table, instruction_token):
     data = data
     print(selected_table)
 
@@ -289,7 +288,7 @@ def print_instruction_step(message, instruction, data, case, selected_table):
             # rating_data.add_value(data_lists[-1][1])
         reload_bot(message)
     elif case == 2:
-        final_menu_select_step(message, data)
+        final_menu_select_step(message, data, instruction_token)
     elif case == 3:
         if message.text != 'Текст':
             for index, item in enumerate(writer_data.values):
@@ -299,11 +298,11 @@ def print_instruction_step(message, instruction, data, case, selected_table):
                     rating_data.add_value(data_lists[index])
                 print(len(rating_data.values))
             instruction_token.refresh_token()
-        menu_select_step(message, data, selected_table)
+        menu_select_step(message, data, selected_table, instruction_token)
 
 
 # Последний шаг, генерируются кнопки для завершения работы (вопрос: помогло или нет?)
-def final_menu_select_step(message, data):
+def final_menu_select_step(message, data, instruction_token):
     markup = types.ReplyKeyboardMarkup(one_time_keyboard=True, resize_keyboard=True, row_width=2)
     message_list = []
     for item in data:
@@ -313,11 +312,11 @@ def final_menu_select_step(message, data):
     msg = bot.send_message(message.chat.id,
                            message_list[0],
                            reply_markup=markup, disable_notification=True)  # вызвать клаву
-    bot.register_next_step_handler(msg, final_process_select_step, data)
+    bot.register_next_step_handler(msg, final_process_select_step, data, instruction_token)
 
 
 # выводится тескт с дальнейшими указаниями если инструкция не помогла. (в дальнейшем здесь будет вызываться запись в БД)
-def final_process_select_step(message, data):
+def final_process_select_step(message, data, instruction_token):
     texts = []
     answers = []
     try:

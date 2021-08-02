@@ -126,9 +126,6 @@ class ImportFunction:
         DataBaseFunctions.recreate_table(table_name)
 
 
-
-
-
 class DataCash:
 
     def __init__(self):
@@ -160,8 +157,8 @@ class MarkedRequestCash(DataCash):
 
 
 if __name__ == "__main__":
-    print(get_instruction('link', 'instruction'))
-    #ImportFunction.import_in_google_sheet(config.LINK_URL_SHEETS, 'Демо', 'requests')
+    #print(get_instruction('link', 'instruction'))
+    ImportFunction.import_in_google_sheet(config.LINK_URL_SHEETS, 'Демо', 'requests')
 
 
 
