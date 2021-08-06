@@ -199,8 +199,8 @@ class GoogleSheets:
                                         body={'values': values})
         request.execute()
 
-    def get_sheets_values_from_base(self, spreadsheets_name, start_row='', end_row='', start_column='A',
-                                    end_column='ZZ', fields='', valueRenderOption='FORMATTED_VALUE'):
+    def get_sheets_values(self, spreadsheets_name: str, start_row='', end_row='', start_column='A',
+                          end_column='ZZ', fields='', valueRenderOption='FORMATTED_VALUE'):
         '''
         :param spreadsheets_name:
         :param start_row: 1,2,3...N
@@ -248,7 +248,6 @@ class GoogleSheets:
         except ValueError:
             return "Данных нет в базе", id_list
 
-
     def add_user_in_base(self, spacial_data, user_id, user_name, spreadsheets_name, email, values):
         assert type(user_id) is str, "Id пользователя должен быть в формате строки"
         sheet = services_sheet.spreadsheets()
@@ -282,11 +281,11 @@ class GoogleSheets:
 class DictWorker:
 
     @staticmethod
-    def get_massive_from_dict(element):
-        return [element[key] for key, value in element.items()]
+    def get_massive_from_dict(dictionary: dict):
+        return [dictionary[key] for key, value in dictionary.items()]
 
     @staticmethod
-    def generate_dict_from_list_and_dict(data_list, dictionary):
+    def generate_dict_from_list_and_dict(data_list: list, dictionary: dict):
 
         '''
         :param data_list:
@@ -320,7 +319,7 @@ class DictWorker:
         return [{keys[i]: item for i, item in enumerate(value)} for value in values]
 
     @staticmethod
-    def find_elements_in_dicts_list(key, keys, values):
+    def find_elements_in_dicts_list(key: str, values: list):
 
         '''
         :param key: string
@@ -328,21 +327,36 @@ class DictWorker:
         :param values: list in list example: [{},{},{}]
         :return: string
         '''
-
-        assert key in keys, f"Ключа нет в списке доступных ключей. Доступные клочи {keys}"
+        keys = list(values[0].keys())
+        assert key in keys, f"Ключа нет в списке доступных ключей. Доступные ключи {keys}"
         assert type(key) is str and type(keys) is list, "Несоответсвие типов данных"
         for item in values:
             assert type(item) is dict, "Item должен быть с типом данных dict"
             try:
-                print(item[key])
-            except ValueError:
+                print("%s, %s" % (key,item[key]))
+            except KeyError:
                 print('Такого ключа нет')
+
+    @staticmethod
+    def filter_list_of_dicts(key: str, value: str, data: list[dict]):
+        keys = list(data[0].keys())
+        assert key in keys, f"Ключа нет в списке доступных ключей. Доступные ключи {keys}"
+        assert type(key) is str and type(keys) is list, "Несоответсвие типов данных"
+        return list(filter(lambda item: item[key] == value, data))
 
 
 if __name__ == "__main__":
     import config
     from pprint import pprint
-    sheet = GoogleSheets(config.LINK_URL_SHEETS)
-    sheet.add_interaction(values=[[i for i in range(6)]for _ in range(3)], spreadsheet_name='Демо')
+    LINK = 'https://docs.google.com/spreadsheets/d/1IJlYGVeFxEMupX7DBnD4IVB_bKHF15FDvaMVLkgFYP8/edit#gid=1326564730'
+    sheet = GoogleSheets(LINK)
+    value = sheet.get_sheets_values(spreadsheets_name='Реестр', start_row='2', end_column='DC')
+    sheet_data_in_dict = DictWorker.generate_dict(keys=value[0], values=value[2:])
+    filtered_data = DictWorker.filter_list_of_dicts('Статус', 'Разрешено', sheet_data_in_dict)
+    #DictWorker.find_elements_in_dicts_list('Статус', filtered_data)
+    print(filtered_data)
+
+
+
 
 
