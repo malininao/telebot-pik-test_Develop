@@ -6,6 +6,7 @@ import string
 import telebot
 from telebot import types
 from pprint import pprint
+from tqdm import tqdm
 
 from data_functions import get_data, UnmarkedRequestCash,  MarkedRequestCash, get_instruction
 from google_module import GoogleDocs, GoogleDocsRead, GoogleSheets, DictWorker
@@ -16,15 +17,20 @@ writer_data = UnmarkedRequestCash()
 rating_data = MarkedRequestCash()
 logger = telebot.logger
 
+
 instruction_link_data = get_instruction('link', 'instruction')
 instruction_link_list = [item[0] for item in instruction_link_data]
 instruction_cash = []
-for item in instruction_link_list:
+
+pbar = tqdm(instruction_link_list)
+pbar.colour = 'white'
+
+for item in pbar:
     doc = GoogleDocs(item)
     total_list_item = GoogleDocsRead(doc_body=doc.get_document_body(), inline_objects=doc.get_inline_object()
               ).join_total_list()
     instruction_cash.append(total_list_item)
-    print("Loading data %s from %s" % (instruction_link_list.index(item)+1, len(instruction_link_list)))
+pbar.close()
 print("Instruction cash is ready")
 
 def dict_from_string(dict_in_string):
