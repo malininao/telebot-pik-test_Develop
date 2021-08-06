@@ -1,9 +1,9 @@
 import sqlite3
 import os
 from psycopg2 import connect
-from datetime import datetime
+import datetime
 from google_module import GoogleSheets
-import asyncio
+
 
 def get_date_time():
     offset = datetime.timedelta(hours=3)
@@ -11,6 +11,7 @@ def get_date_time():
     date = f'{dt.date().day}.{dt.date().month}.{dt.date().year}'
     time = f'{dt.time().hour}:{dt.time().minute}:{dt.time().second}'
     return date, time
+
 
 if os.environ.get('HEROKU') == "True":
     DATABASE_URL = os.environ['DATABASE_URL']
@@ -154,6 +155,12 @@ class MarkedRequestCash(DataCash):
             self.values = []
         else:
             pass
+
+
+class SheetCash(DataCash):
+
+    def get_tags(self):
+       return self.values[0][10:6]
 
 
 if __name__ == "__main__":

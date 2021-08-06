@@ -348,13 +348,17 @@ class DictWorker:
 if __name__ == "__main__":
     import config
     from pprint import pprint
-    LINK = 'https://docs.google.com/spreadsheets/d/1IJlYGVeFxEMupX7DBnD4IVB_bKHF15FDvaMVLkgFYP8/edit#gid=1326564730'
+    LINK = config.REGISTRY_LINK
     sheet = GoogleSheets(LINK)
-    value = sheet.get_sheets_values(spreadsheets_name='Реестр', start_row='2', end_column='DC')
-    sheet_data_in_dict = DictWorker.generate_dict(keys=value[0], values=value[2:])
-    filtered_data = DictWorker.filter_list_of_dicts('Статус', 'Разрешено', sheet_data_in_dict)
+    value = sheet.get_sheets_values(spreadsheets_name='Реестр', start_row='1', end_column='DC')
+    index_list = [index for index, text in enumerate(value[0]) if text]
+    titles = [value[1][index_list[i]:index_list[i+1]] for i in range(len(index_list)-1)]
+    #sheet_data_in_dict = DictWorker.generate_dict(keys=value[0], values=value[2:])
+    #filtered_data = DictWorker.filter_list_of_dicts('Статус', 'Разрешено', sheet_data_in_dict)
     #DictWorker.find_elements_in_dicts_list('Статус', filtered_data)
-    print(filtered_data)
+    print(index_list)
+    print(value[1])
+    print(titles)
 
 
 

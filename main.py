@@ -8,15 +8,15 @@ from telebot import types
 from pprint import pprint
 from tqdm import tqdm
 
-from data_functions import get_data, UnmarkedRequestCash,  MarkedRequestCash, get_instruction
+from data_functions import get_data, UnmarkedRequestCash,  MarkedRequestCash, SheetCash, get_instruction
 from google_module import GoogleDocs, GoogleDocsRead, GoogleSheets, DictWorker
 from recode_instriction_name import DecoderTableName
 
 # Создается кэш дейсвтий пользователя
 writer_data = UnmarkedRequestCash()
 rating_data = MarkedRequestCash()
+sheet_cash = SheetCash()
 logger = telebot.logger
-
 
 instruction_link_data = get_instruction('link', 'instruction')
 instruction_link_list = [item[0] for item in instruction_link_data]
@@ -52,6 +52,7 @@ if HEROKU == "True":
     REQUEST_BASE = os.environ.get('REQUEST_BASE')
     DICTIONARY_INSTRUCT_REQUEST = dict_from_string(os.environ.get('DICTIONARY_INSTRUCT_REQUEST'))
     DICTIONARY_USER_REQUEST = dict_from_string(os.environ.get('DICTIONARY_USER_REQUEST'))
+    REGISTRY_LINK = os.environ.get("REGISTRY_LINK")
 else:
     import config
     TOKEN = config.TOKEN
@@ -62,7 +63,13 @@ else:
     REQUEST_BASE = config.REQUEST_BASE
     DICTIONARY_INSTRUCT_REQUEST = dict_from_string(config.DICTIONARY_INSTRUCT_REQUEST)
     DICTIONARY_USER_REQUEST = dict_from_string(config.DICTIONARY_USER_REQUEST)
+    REGISTRY_LINK = config.REGISTRY_LINK
 
+sheet_values = GoogleSheets(REGISTRY_LINK).get_sheets_values('Реестр', start_row='2', end_column='DC')
+sheet_data_in_dict = DictWorker.generate_dict(keys=sheet_values[0], values=sheet_values[2:])
+filtered_data = DictWorker.filter_list_of_dicts('Статус', 'Разрешено', sheet_data_in_dict)
+
+sheet_cash.add_value(filtered_data)
 sheet_data = GoogleSheets(LINK_URL_SHEET)
 bot = telebot.TeleBot(TOKEN)
 
