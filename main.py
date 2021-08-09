@@ -6,9 +6,9 @@ import string
 import telebot
 from telebot import types
 from pprint import pprint
-from tqdm import tqdm
 
-from data_functions import get_data, UnmarkedRequestCash,  MarkedRequestCash, SheetCash, get_instruction
+
+from data_functions import get_data, InstructionCash, UnmarkedRequestCash,  MarkedRequestCash, SheetCash, get_instruction
 from google_module import GoogleDocs, GoogleDocsRead, GoogleSheets, DictWorker
 from recode_instriction_name import DecoderTableName
 
@@ -20,18 +20,9 @@ logger = telebot.logger
 
 instruction_link_data = get_instruction('link', 'instruction')
 instruction_link_list = [item[0] for item in instruction_link_data]
-instruction_cash = []
+instruction_cash = InstructionCash()
 
-pbar = tqdm(instruction_link_list)
-pbar.colour = 'white'
-
-for item in pbar:
-    doc = GoogleDocs(item)
-    total_list_item = GoogleDocsRead(doc_body=doc.get_document_body(), inline_objects=doc.get_inline_object()
-              ).join_total_list()
-    instruction_cash.append(total_list_item)
-pbar.close()
-print("Instruction cash is ready")
+instruction_cash.create_cash(instruction_link_list)
 
 
 def dict_from_string(dict_in_string):
@@ -273,7 +264,7 @@ def print_instruction_step(message, instruction, data, case, selected_table, ins
             pprint(writer_data.values)
             print(len(writer_data.values))
             index = instruction_link_list.index(instruction)
-            instruction_list = instruction_cash[index]
+            instruction_list = instruction_cash.values[index]
             for item in instruction_list:
                 if item.count('googleusercontent') == 0:
                     bot.send_message(message.chat.id, item, disable_notification=True, parse_mode="HTML")

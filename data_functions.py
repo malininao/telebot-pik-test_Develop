@@ -2,7 +2,8 @@ import sqlite3
 import os
 from psycopg2 import connect
 import datetime
-from google_module import GoogleSheets
+from google_module import GoogleSheets, GoogleDocs, GoogleDocsRead
+from tqdm import tqdm
 
 
 def get_date_time():
@@ -129,8 +130,10 @@ class ImportFunction:
 
 class DataCash:
 
-    def __init__(self):
+    def __init__(self, life_time=20):
         self.values = []
+        self.create_time = get_date_time()
+        self.life_time = life_time
 
     def add_value(self, value):
         self.values.append(value)
@@ -161,6 +164,24 @@ class SheetCash(DataCash):
 
     def get_tags(self):
        return self.values[0][10:6]
+
+
+class InstructionCash(DataCash):
+
+    def create_cash(self, instruction_link_list):
+        pbar = tqdm(instruction_link_list)
+        pbar.colour = 'white'
+        for item in pbar:
+            doc = GoogleDocs(item)
+            total_list_item = GoogleDocsRead(doc_body=doc.get_document_body(), inline_objects=doc.get_inline_object()
+                                             ).join_total_list()
+            self.add_value(total_list_item)
+        pbar.close()
+        print("Instruction cash is ready")
+
+    def update_cash(self, data):
+        self.values = []
+        self.values.append(data)
 
 
 if __name__ == "__main__":
