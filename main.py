@@ -59,11 +59,11 @@ else:
     REGISTRY_LINK = config.REGISTRY_LINK
     CASH_CAPACITY = config.CASH_CAPACITY
 
-sheet_values = GoogleSheets(REGISTRY_LINK).get_sheets_values('Реестр', start_row='2', end_column='DC')
-sheet_data_in_dict = DictWorker.generate_dict(keys=sheet_values[0], values=sheet_values[2:])
-filtered_data = DictWorker.filter_list_of_dicts('Статус', 'Разрешено', sheet_data_in_dict)
+#sheet_values = GoogleSheets(REGISTRY_LINK).get_sheets_values('Реестр', start_row='2', end_column='DC')
+#sheet_data_in_dict = DictWorker.generate_dict(keys=sheet_values[0], values=sheet_values[2:])
+#filtered_data = DictWorker.filter_list_of_dicts('Статус', 'Разрешено', sheet_data_in_dict)
 
-sheet_cash.add_value(filtered_data)
+#sheet_cash.add_value(filtered_data)
 sheet_data = GoogleSheets(LINK_URL_SHEET)
 bot = telebot.TeleBot(TOKEN)
 
