@@ -100,8 +100,7 @@ def start(message):
     instruction_token.set_token()
     set_job_email(message, instruction_token)
 
-
-@bot.message_handler(content_types=['text'])
+@bot.message_handler(commands=['restart'])
 def reload_bot(message):
     instruction_token = RequestToken()
     try:
