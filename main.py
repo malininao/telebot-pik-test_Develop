@@ -221,6 +221,8 @@ def process_select_step(message, data, selected_table, instruction_token):
             reload_bot(message)
         elif message.text == "/start":
             start(message)
+        elif message.text == '/restart':
+            reload_bot(message)
         else:
             print(str(e))
             bot.reply_to(message, "Раздел")
