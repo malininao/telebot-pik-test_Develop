@@ -8,7 +8,8 @@ from telebot import types
 from pprint import pprint
 
 
-from data_functions import get_data, InstructionCash, UnmarkedRequestCash,  MarkedRequestCash, SheetCash, get_instruction
+from data_functions import get_data, InstructionCash, UnmarkedRequestCash,  MarkedRequestCash, SheetCash, \
+    get_instruction, DataBaseFunctions
 from google_module import GoogleDocs, GoogleDocsRead, GoogleSheets, DictWorker
 from recode_instriction_name import DecoderTableName
 
@@ -44,6 +45,7 @@ if HEROKU == "True":
     DICTIONARY_INSTRUCT_REQUEST = dict_from_string(os.environ.get('DICTIONARY_INSTRUCT_REQUEST'))
     DICTIONARY_USER_REQUEST = dict_from_string(os.environ.get('DICTIONARY_USER_REQUEST'))
     REGISTRY_LINK = os.environ.get("REGISTRY_LINK")
+    CASH_CAPACITY = os.environ.get("CASH_CAPACITY")
 else:
     import config
     TOKEN = config.TOKEN
@@ -55,6 +57,7 @@ else:
     DICTIONARY_INSTRUCT_REQUEST = dict_from_string(config.DICTIONARY_INSTRUCT_REQUEST)
     DICTIONARY_USER_REQUEST = dict_from_string(config.DICTIONARY_USER_REQUEST)
     REGISTRY_LINK = config.REGISTRY_LINK
+    CASH_CAPACITY = config.CASH_CAPACITY
 
 sheet_values = GoogleSheets(REGISTRY_LINK).get_sheets_values('Реестр', start_row='2', end_column='DC')
 sheet_data_in_dict = DictWorker.generate_dict(keys=sheet_values[0], values=sheet_values[2:])
@@ -102,8 +105,8 @@ def start(message):
 def reload_bot(message):
     instruction_token = RequestToken()
     try:
-        writer_data.write_values('requests', max_count_element=5)
-        rating_data.update_instruction_rating(max_count_element=5)
+        writer_data.write_values('requests', max_count_element=int(CASH_CAPACITY))
+        rating_data.update_instruction_rating(max_count_element=int(CASH_CAPACITY))
         instruction_token.refresh_token()
     except Exception as e:
         print(f"Data wasn't writen, error: {e}")
@@ -112,27 +115,35 @@ def reload_bot(message):
 
 def set_job_email(message, instruction_token):
 
-    sheet_values = sheet_data.get_sheets_values(USER_BASE, start_column='A',
-                                                start_row='2', end_column='C')
-    dictionary = DictWorker.generate_dict_from_list_and_dict(sheet_values, DICTIONARY_USER_REQUEST)
-    user_data = sheet_data.get_data_from_base(message.chat.id, dictionary, KEY_USER_PARAM)
+    #sheet_values = sheet_data.get_sheets_values(USER_BASE, start_column='A',
+                                                #start_row='2', end_column='C')
+    #dictionary = DictWorker.generate_dict_from_list_and_dict(sheet_values, DICTIONARY_USER_REQUEST)
+    #user_data = sheet_data.get_data_from_base(message.chat.id, dictionary, KEY_USER_PARAM)
+    user_data = DataBaseFunctions.select_data('users')
+    id_list = [item[0] for item in user_data]
 
-    if user_data[0] == "Данных нет в базе":
+    if str(message.chat.id) not in id_list:
+        print("Пользователь не найден")
         markup = types.ReplyKeyboardRemove()
         msg = bot.send_message(message.chat.id, "Введите рабочую почту", reply_markup=markup, disable_notification=True)
-        bot.register_next_step_handler(msg, add_user_in_base, user_data, sheet_values, instruction_token)
+        bot.register_next_step_handler(msg, add_user_in_base, instruction_token)
 
     else:
+        print("Пользователь найден")
         main_menu_select_step(message, instruction_token)
 
 
-def add_user_in_base(message, user_data, sheet_values, instruction_token):
+def add_user_in_base(message, instruction_token):
     if "@pik.ru" in message.text:
         bot.send_message(message.chat.id, "Данные записываются...")
-        sheet_data.add_user_in_base(user_data, message.chat.id, message.chat.username,
-                                    "База пользователей", message.text, sheet_values)
-        telebot.logger.setLevel(logging.DEBUG)
-        main_menu_select_step(message, instruction_token)
+        try:
+            DataBaseFunctions.insert_user((message.chat.id, message.chat.username, message.text, "Не проверен"), 'users')
+            main_menu_select_step(message, instruction_token)
+        except Exception as e:
+            print(f"Пользователь не записан. ошибка {e}")
+            bot.send_message(message.chat.id, "Данные не записаны")
+            set_job_email(message, instruction_token)
+        #telebot.logger.setLevel(logging.DEBUG)
     else:
         bot.send_message(message.chat.id, "Почта не зарегистрирована в домене pik.ru")
         set_job_email(message, instruction_token)

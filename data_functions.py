@@ -60,6 +60,12 @@ class DataBaseFunctions:
             print('data was written')
 
     @staticmethod
+    def insert_user(data, table_name):
+        with connect(**params) as conn:
+            cur = conn.cursor()
+            cur.execute("""INSERT INTO %s VALUES %s""" % (table_name, data))
+
+    @staticmethod
     def select_data(table_name: str):
         with connect(**params) as conn:
             cur = conn.cursor()
@@ -86,13 +92,13 @@ class DataBaseFunctions:
             print('table created')
 
     @staticmethod
-    def create_table():
+    def create_table_request():
         with connect(**params) as conn:
             print('connection establish')
             cur = conn.cursor()
             cur.execute('''CREATE TABLE requests 
                      (REQUEST_TOKEN TEXT PRIMARY KEY NOT NULL UNIQUE,
-                     USER_ID TEXT NOT NULL,
+                     USER_ID TEXT FOREING KEY,
                      PATH TEXT NOT NULL,
                      END_POINT TEXT NOT NULL,
                      DATE TEXT NOT NULL,
@@ -101,11 +107,19 @@ class DataBaseFunctions:
             print('table created')
 
     @staticmethod
+    def create_table(sql_params: str):
+        with connect(**params) as conn:
+            print('connection establish')
+            cur = conn.cursor()
+            cur.execute('''%s;''' % sql_params)
+            print('table created')
+
+    @staticmethod
     def drop_table(table_name: str):
         with connect(**params) as conn:
             print('connection establish')
             cur = conn.cursor()
-            cur.execute('''DROP TABLE %s''', table_name)
+            cur.execute('''DROP TABLE %s''' % table_name)
             print('table deleted')
 
     @staticmethod
@@ -186,7 +200,10 @@ class InstructionCash(DataCash):
 
 if __name__ == "__main__":
     #print(get_instruction('link', 'instruction'))
-    ImportFunction.import_in_google_sheet(config.LINK_URL_SHEETS, 'Демо', 'requests')
+    #DataBaseFunctions.drop_table('users')
+    DataBaseFunctions.create_table('CREATE TABLE users (USER_ID TEXT PRIMARY KEY NOT NULL UNIQUE, USER_NAME TEXT, EMAIL TEXT NOT NULL , STATUS TEXT NOT NULL)')
+    #ImportFunction.import_in_google_sheet(config.LINK_URL_SHEETS, 'Демо', 'requests')
+    #DataBaseFunctions.select_data('users')
 
 
 
