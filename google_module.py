@@ -346,20 +346,7 @@ class DictWorker:
 
 
 if __name__ == "__main__":
-    import config
-    from pprint import pprint
-    LINK = config.REGISTRY_LINK
-    sheet = GoogleSheets(LINK)
-    value = sheet.get_sheets_values(spreadsheets_name='Реестр', start_row='1', end_column='DC')
-    index_list = [index for index, text in enumerate(value[0]) if text]
-    titles = [value[1][index_list[i]:index_list[i+1]] for i in range(len(index_list)-1)]
-    sheet_data_in_dict = DictWorker.generate_dict(keys=value[1], values=value[3:])
-    filtered_data = DictWorker.filter_list_of_dicts('Статус', 'Разрешено', sheet_data_in_dict)
-    DictWorker.find_elements_in_dicts_list('Код', filtered_data)
-    #print(index_list)
-    #print(value[1])
-    #print(titles)
-    #pprint(sheet_data_in_dict[70]['Код'])
+    pass
 
 
 
