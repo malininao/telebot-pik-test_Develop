@@ -9,7 +9,7 @@ from pprint import pprint
 
 
 from data_functions import get_data, InstructionCash, UnmarkedRequestCash,  MarkedRequestCash, SheetCash, \
-    get_instruction, DataBaseFunctions
+    get_instruction, DataBaseFunctions, ImportFunction
 from google_module import GoogleDocs, GoogleDocsRead, GoogleSheets, DictWorker
 from recode_instriction_name import DecoderTableName
 
@@ -24,6 +24,7 @@ instruction_link_list = [item[0] for item in instruction_link_data]
 instruction_cash = InstructionCash()
 
 instruction_cash.create_cash(instruction_link_list)
+print(instruction_cash.values)
 
 
 def dict_from_string(dict_in_string):
@@ -93,12 +94,17 @@ class RequestToken:
     def refresh_token(self):
         self.set_token()
 
+import_user_token = RequestToken()
+import_user_token.set_token()
+import_request_token = RequestToken()
+import_request_token.set_token()
 
 @bot.message_handler(commands=['start'])
 def start(message):
     instruction_token = RequestToken()
     instruction_token.set_token()
     set_job_email(message, instruction_token)
+
 
 @bot.message_handler(commands=['restart'])
 def reload_bot(message):
@@ -142,7 +148,6 @@ def add_user_in_base(message, instruction_token):
             print(f"Пользователь не записан. ошибка {e}")
             bot.send_message(message.chat.id, "Данные не записаны")
             set_job_email(message, instruction_token)
-        #telebot.logger.setLevel(logging.DEBUG)
     else:
         bot.send_message(message.chat.id, "Почта не зарегистрирована в домене pik.ru")
         set_job_email(message, instruction_token)
@@ -158,6 +163,9 @@ def main_menu_select_step(message, instruction_token):
             item_btn = types.KeyboardButton(item[1])
             markup.add(item_btn)
         message_list.append(str(item[4]))
+    if str(message.chat.id) in ['415374544', '300855004']:
+        markup.add(f"Импортировать данные запросов: {import_request_token.token}")
+        markup.add(f'Импортировать данные пользователей: {import_user_token.token}')
     msg = bot.send_message(message.chat.id,
                            message_list[0],
                            reply_markup=markup, disable_notification=True)  # вызвать клаву
@@ -223,6 +231,12 @@ def process_select_step(message, data, selected_table, instruction_token):
             start(message)
         elif message.text == '/restart':
             reload_bot(message)
+        elif message.text == f"Импортировать данные запросов: {import_request_token.token}":
+            ImportFunction.import_in_google_sheet(config.LINK_URL_SHEETS, 'База обращений', 'requests')
+            reload_bot(message)
+        elif message.text == f'Импортировать данные пользователей: {import_user_token.token}':
+            ImportFunction.import_user_in_google_sheet(config.LINK_URL_SHEETS, 'База пользователей', 'users')
+            reload_bot(message)
         else:
             print(str(e))
             bot.reply_to(message, "Раздел")
@@ -277,16 +291,24 @@ def print_instruction_step(message, instruction, data, case, selected_table, ins
             print(len(writer_data.values))
             index = instruction_link_list.index(instruction)
             instruction_list = instruction_cash.values[index]
-            for item in instruction_list:
+            for i, item in enumerate(instruction_list):
                 if item.count('googleusercontent') == 0:
-                    bot.send_message(message.chat.id, item, disable_notification=True, parse_mode="HTML")
+                    bot.send_message(message.chat.id, instruction_list[i], disable_notification=True, parse_mode="HTML")
                 else:
-                    bot.send_photo(message.chat.id, item, disable_notification=True)
+                    try:
+                        bot.send_photo(message.chat.id, instruction_list[i], disable_notification=True)
+                    except Exception as e:
+                        bot.send_message(message.chat.id, "Изображение отсутствует", disable_notification=True)
+                        print("%s: %s" % (type(e), e))
+                        print(instruction_link_list)
+                        print(index)
+                        print(instruction_link_list[index])
+                        instruction_cash.update_cash_unit(index, instruction_link_list[index])
+                        instruction_list = instruction_cash.values[index]
+                        bot.send_photo(message.chat.id, instruction_list[i], disable_notification=True)
         else:
             bot.send_message(message.chat.id, instruction, disable_notification=True, parse_mode="HTML")
-    #base_values = sheet_data.get_sheets_values_from_base(REQUEST_BASE, start_row='2')
-    #base_data = DictWorker.generate_dict_from_list_and_dict(base_values, DICTIONARY_INSTRUCT_REQUEST)
-    #instruction_data = sheet_data.get_data_from_base(instruction_token, base_data, KEY_INSTRUCT_PARAM)
+
     data_lists = [[item[0], [val for val in item[1]]] for item in writer_data.values]
     if case == 1:
         if message.text == "Спасибо, инструкция помогла":
@@ -300,12 +322,12 @@ def print_instruction_step(message, instruction, data, case, selected_table, ins
                 data_lists[index][1][6] = rating
                 rating_data.add_value(data_lists[index])
             print(len(rating_data.values))
-            # else:
-            # data_lists[-1][1][6] = rating
-            # rating_data.add_value(data_lists[-1][1])
+
         reload_bot(message)
+
     elif case == 2:
         final_menu_select_step(message, data, instruction_token)
+
     elif case == 3:
         if message.text != 'Текст':
             for index, item in enumerate(writer_data.values):

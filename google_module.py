@@ -277,6 +277,16 @@ class GoogleSheets:
                                             body={'values': values})
             request.execute()
 
+    def clear_table(self, spreadsheet_name):
+        sheet = services_sheet.spreadsheets()
+        values = self.get_sheets_values(spreadsheet_name, start_row='2')
+        new_values = [['' for _ in item] for item in values]
+        request = sheet.values().update(spreadsheetId=self.get_sheets_from_url(),
+                                        range=f'{spreadsheet_name}!A2',
+                                        valueInputOption='USER_ENTERED',
+                                        body={'values': new_values})
+        request.execute()
+
 
 class DictWorker:
 
@@ -346,7 +356,8 @@ class DictWorker:
 
 
 if __name__ == "__main__":
-    pass
+    import config
+    GoogleSheets(config.LINK_URL_SHEETS).clear_table('База пользователей')
 
 
 

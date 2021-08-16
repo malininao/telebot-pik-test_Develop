@@ -228,3 +228,4 @@ distutils-precedence.pth
 /psycopg2_binary-2.9.1.dist-info
 /_distutils_hack
 /serf
+test.py

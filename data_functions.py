@@ -141,6 +141,12 @@ class ImportFunction:
         GoogleSheets(sheet_url).add_interaction(spreadsheet_name=spreadsheet_name, values=data)
         DataBaseFunctions.recreate_table(table_name)
 
+    @staticmethod
+    def import_user_in_google_sheet(sheet_url: str, spreadsheet_name: str, table_name: str):
+        data = DataBaseFunctions.select_data(table_name)
+        GoogleSheets(sheet_url).clear_table(spreadsheet_name=spreadsheet_name)
+        GoogleSheets(sheet_url).add_interaction(spreadsheet_name=spreadsheet_name, values=data)
+
 
 class DataCash:
 
@@ -197,12 +203,20 @@ class InstructionCash(DataCash):
         self.values = []
         self.values.append(data)
 
+    def update_cash_unit(self, index, instriction_link_list):
+        doc = GoogleDocs(instriction_link_list[index])
+        self.values[index] = GoogleDocsRead(doc_body=doc.get_document_body(), inline_objects=doc.get_inline_object()
+                                             ).join_total_list()
+
+
 
 if __name__ == "__main__":
+    pass
     #print(get_instruction('link', 'instruction'))
     #DataBaseFunctions.drop_table('users')
-    DataBaseFunctions.create_table('CREATE TABLE users (USER_ID TEXT PRIMARY KEY NOT NULL UNIQUE, USER_NAME TEXT, EMAIL TEXT NOT NULL , STATUS TEXT NOT NULL)')
-    #ImportFunction.import_in_google_sheet(config.LINK_URL_SHEETS, 'Демо', 'requests')
+    #DataBaseFunctions.create_table('CREATE TABLE users (USER_ID TEXT PRIMARY KEY NOT NULL UNIQUE, USER_NAME TEXT, EMAIL TEXT NOT NULL , STATUS TEXT NOT NULL)')
+    #ImportFunction.import_in_google_sheet(config.LINK_URL_SHEETS_2, 'База обращений', 'requests')
+    ImportFunction.import_user_in_google_sheet(config.LINK_URL_SHEETS_2, 'База пользователей', 'users')
     #DataBaseFunctions.select_data('users')
 
 
