@@ -137,15 +137,21 @@ class ImportFunction:
 
     @staticmethod
     def import_in_google_sheet(sheet_url: str, spreadsheet_name: str, table_name: str):
-        data = DataBaseFunctions.select_data(table_name)
-        GoogleSheets(sheet_url).add_interaction(spreadsheet_name=spreadsheet_name, values=data)
-        DataBaseFunctions.recreate_table(table_name)
+        try:
+            data = DataBaseFunctions.select_data(table_name)
+            GoogleSheets(sheet_url).add_interaction(spreadsheet_name=spreadsheet_name, values=data)
+            DataBaseFunctions.recreate_table(table_name)
+        except Exception as e:
+            print(e)
 
     @staticmethod
     def import_user_in_google_sheet(sheet_url: str, spreadsheet_name: str, table_name: str):
-        data = DataBaseFunctions.select_data(table_name)
-        GoogleSheets(sheet_url).clear_table(spreadsheet_name=spreadsheet_name)
-        GoogleSheets(sheet_url).add_interaction(spreadsheet_name=spreadsheet_name, values=data)
+        try:
+            data = DataBaseFunctions.select_data(table_name)
+            GoogleSheets(sheet_url).clear_table(spreadsheet_name=spreadsheet_name)
+            GoogleSheets(sheet_url).add_interaction(spreadsheet_name=spreadsheet_name, values=data)
+        except Exception as e:
+            print(e)
 
 
 class DataCash:
@@ -207,7 +213,6 @@ class InstructionCash(DataCash):
         doc = GoogleDocs(instriction_link_list[index])
         self.values[index] = GoogleDocsRead(doc_body=doc.get_document_body(), inline_objects=doc.get_inline_object()
                                              ).join_total_list()
-
 
 
 if __name__ == "__main__":
