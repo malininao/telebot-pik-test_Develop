@@ -119,11 +119,6 @@ def reload_bot(message):
 
 
 def set_job_email(message, instruction_token):
-
-    #sheet_values = sheet_data.get_sheets_values(USER_BASE, start_column='A',
-                                                #start_row='2', end_column='C')
-    #dictionary = DictWorker.generate_dict_from_list_and_dict(sheet_values, DICTIONARY_USER_REQUEST)
-    #user_data = sheet_data.get_data_from_base(message.chat.id, dictionary, KEY_USER_PARAM)
     user_data = DataBaseFunctions.select_data('users')
     id_list = [item[0] for item in user_data]
 
@@ -375,9 +370,7 @@ def final_process_select_step(message, data, instruction_token):
                 data_lists[index][1][6] = rating
                 rating_data.add_value(data_lists[index])
                 print(len(rating_data.values))
-            #else:
-                #data_lists[-1][1][6] = rating
-                #rating_data.add_value(data_lists[-1][1])
+
         pprint(rating_data.values)
         bot.send_message(message.chat.id, answers[index_answer], disable_notification=True)
         reload_bot(message)
