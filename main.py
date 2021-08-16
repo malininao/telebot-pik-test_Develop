@@ -24,7 +24,6 @@ instruction_link_list = [item[0] for item in instruction_link_data]
 instruction_cash = InstructionCash()
 
 instruction_cash.create_cash(instruction_link_list)
-print(instruction_cash.values)
 
 
 def dict_from_string(dict_in_string):
@@ -227,10 +226,10 @@ def process_select_step(message, data, selected_table, instruction_token):
         elif message.text == '/restart':
             reload_bot(message)
         elif message.text == f"Импортировать данные запросов: {import_request_token.token}":
-            ImportFunction.import_in_google_sheet(config.LINK_URL_SHEETS, 'База обращений', 'requests')
+            ImportFunction.import_in_google_sheet(LINK_URL_SHEET, 'База обращений', 'requests')
             reload_bot(message)
         elif message.text == f'Импортировать данные пользователей: {import_user_token.token}':
-            ImportFunction.import_user_in_google_sheet(config.LINK_URL_SHEETS, 'База пользователей', 'users')
+            ImportFunction.import_user_in_google_sheet(LINK_URL_SHEET, 'База пользователей', 'users')
             reload_bot(message)
         else:
             print(str(e))

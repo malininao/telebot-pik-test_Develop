@@ -220,8 +220,8 @@ if __name__ == "__main__":
     #print(get_instruction('link', 'instruction'))
     #DataBaseFunctions.drop_table('users')
     #DataBaseFunctions.create_table('CREATE TABLE users (USER_ID TEXT PRIMARY KEY NOT NULL UNIQUE, USER_NAME TEXT, EMAIL TEXT NOT NULL , STATUS TEXT NOT NULL)')
-    #ImportFunction.import_in_google_sheet(config.LINK_URL_SHEETS_2, 'База обращений', 'requests')
-    #ImportFunction.import_user_in_google_sheet(config.LINK_URL_SHEETS_2, 'База пользователей', 'users')
+    ImportFunction.import_in_google_sheet(config.LINK_URL_SHEETS_2, 'База обращений', 'requests')
+    ImportFunction.import_user_in_google_sheet(config.LINK_URL_SHEETS_2, 'База пользователей', 'users')
     #DataBaseFunctions.select_data('users')
 
 
