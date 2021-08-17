@@ -210,9 +210,12 @@ class InstructionCash(DataCash):
         self.values.append(data)
 
     def update_cash_unit(self, index, instriction_link_list):
-        doc = GoogleDocs(instriction_link_list[index])
-        self.values[index] = GoogleDocsRead(doc_body=doc.get_document_body(), inline_objects=doc.get_inline_object()
-                                             ).join_total_list()
+        try:
+            doc = GoogleDocs(instriction_link_list[index])
+            self.values[index] = GoogleDocsRead(doc_body=doc.get_document_body(), inline_objects=doc.get_inline_object()
+                                                 ).join_total_list()
+        except Exception as e:
+            print("Ошибка обновления ссылок: %s" % e)
 
 
 if __name__ == "__main__":

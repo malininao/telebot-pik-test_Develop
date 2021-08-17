@@ -285,6 +285,7 @@ def print_instruction_step(message, instruction, data, case, selected_table, ins
             print(len(writer_data.values))
             index = instruction_link_list.index(instruction)
             instruction_list = instruction_cash.values[index]
+
             for i, item in enumerate(instruction_list):
                 if item.count('googleusercontent') == 0:
                     bot.send_message(message.chat.id, instruction_list[i], disable_notification=True, parse_mode="HTML")
@@ -292,12 +293,8 @@ def print_instruction_step(message, instruction, data, case, selected_table, ins
                     try:
                         bot.send_photo(message.chat.id, instruction_list[i], disable_notification=True)
                     except Exception as e:
-                        bot.send_message(message.chat.id, "Изображение отсутствует", disable_notification=True)
                         print("%s: %s" % (type(e), e))
-                        print(instruction_link_list)
-                        print(index)
-                        print(instruction_link_list[index])
-                        instruction_cash.update_cash_unit(index, instruction_link_list[index])
+                        instruction_cash.update_cash_unit(index, instruction_link_list)
                         instruction_list = instruction_cash.values[index]
                         bot.send_photo(message.chat.id, instruction_list[i], disable_notification=True)
         else:
