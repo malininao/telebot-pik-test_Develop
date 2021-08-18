@@ -98,6 +98,12 @@ import_user_token.set_token()
 import_request_token = RequestToken()
 import_request_token.set_token()
 
+
+@bot.message_handler(commands=['help'])
+def send_help(message):
+    bot.send_message(message.chat.id, "Доступные команды бота:\n/start - запуск бота\n/restart - перезапуск бота")
+
+
 @bot.message_handler(commands=['start'])
 def start(message):
     instruction_token = RequestToken()
@@ -378,6 +384,11 @@ def final_process_select_step(message, data, instruction_token):
             bot.reply_to(message, 'Такого раздела пока нет')
             reload_bot(message)
 
+
+@bot.message_handler(content_types=['text'])
+def send_warning(message):
+    bot.send_message(message.chat.id, 'Что то пошло не так, бот на вашем устройстве не активвен, '
+                                      'выберите команду /restart для повторного перезапуска бота')
 
 if __name__ == "__main__":
     try:
