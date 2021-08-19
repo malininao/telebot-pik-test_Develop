@@ -387,7 +387,7 @@ def final_process_select_step(message, data, instruction_token):
 
 @bot.message_handler(content_types=['text'])
 def send_warning(message):
-    bot.send_message(message.chat.id, 'Что то пошло не так, бот на вашем устройстве не активен, '
+    bot.send_message(message.chat.id, 'Что-то пошло не так, бот на вашем устройстве не активен, '
                                       'выберите команду /restart для повторного перезапуска бота')
 
 if __name__ == "__main__":
