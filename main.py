@@ -142,7 +142,11 @@ def add_user_in_base(message, instruction_token):
     if "@pik.ru" in message.text:
         bot.send_message(message.chat.id, "Данные записываются...")
         try:
-            DataBaseFunctions.insert_user((message.chat.id, message.chat.username, message.text, "Не проверен"), 'users')
+            if message.chat.username:
+                user_name = message.chat.username
+            else:
+                user_name = 'Empty'
+            DataBaseFunctions.insert_user((message.chat.id, user_name, message.text, "Не проверен"), 'users')
             main_menu_select_step(message, instruction_token)
         except Exception as e:
             print(f"Пользователь не записан. ошибка {e}")
