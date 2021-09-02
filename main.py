@@ -23,7 +23,7 @@ instruction_link_data = get_instruction('link', 'instruction')
 instruction_link_list = [item[0] for item in instruction_link_data]
 instruction_cash = InstructionCash()
 
-instruction_cash.create_cash(instruction_link_list)
+instruction_cash.create_cash(instruction_link_list[0:1])
 
 
 def dict_from_string(dict_in_string):
@@ -159,20 +159,31 @@ def add_user_in_base(message, instruction_token):
 
 def main_menu_select_step(message, instruction_token):
     data = get_data('t1')
-    markup = types.ReplyKeyboardMarkup(one_time_keyboard=True, resize_keyboard=True, row_width=2)
-    message_list = []
+    menu = telebot.types.InlineKeyboardMarkup(row_width=2)
+    buttons = []
     for item in data:
         if item[1] != "" and item[2] is not None and item[2] != "":
+            buttons.append(telebot.types.InlineKeyboardButton(text=item[1], callback_data=item[1]))
 
-            item_btn = types.KeyboardButton(item[1])
-            markup.add(item_btn)
+    menu.add(*buttons, row_width=2)
+
+    markup = types.ReplyKeyboardMarkup(one_time_keyboard=True, resize_keyboard=True, row_width=2)
+
+    message_list = []
+    item_btn=[]
+    for item in data:
+        if item[1] != "" and item[2] is not None and item[2] != "":
+            item_btn.append(types.KeyboardButton(item[1]))
         message_list.append(str(item[4]))
+    markup.add(*item_btn, row_width=2)
+
     if str(message.chat.id) in ['415374544', '300855004']:
         markup.add(f"Импортировать данные запросов: {import_request_token.token}")
         markup.add(f'Импортировать данные пользователей: {import_user_token.token}')
     msg = bot.send_message(message.chat.id,
                            message_list[0],
                            reply_markup=markup, disable_notification=True)  # вызвать клаву
+    bot.send_message(message.chat.id, "Тут новая клавиатура", reply_markup=menu)
     bot.register_next_step_handler(msg, process_select_step, data, 't1', instruction_token)
 
 

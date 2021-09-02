@@ -326,7 +326,7 @@ class DictWorker:
         :return: [{dict_1}, {dict_2} ... {dict_N}]
         '''
 
-        return [{keys[i]: item for i, item in enumerate(value)} for value in values]
+        return [{keys[i].lower(): item.lower() for i, item in enumerate(value)} for value in values]
 
     @staticmethod
     def find_elements_in_dicts_list(key: str, values: list):
@@ -347,18 +347,34 @@ class DictWorker:
             except KeyError:
                 print('Такого ключа нет')
 
+
     @staticmethod
-    def filter_list_of_dicts(key: str, value: str, data: list[dict]):
+    def filter_list_of_dicts(key: str, values: list, data: list[dict]):
         keys = list(data[0].keys())
         assert key in keys, f"Ключа нет в списке доступных ключей. Доступные ключи {keys}"
         assert type(key) is str and type(keys) is list, "Несоответсвие типов данных"
-        return list(filter(lambda item: item[key] == value, data))
+        for val in values:
+            data = list(filter(lambda item: val in item[key], data))
+        return data
+
+    @staticmethod
+    def get_numerate_list(value: list) -> list:
+        return [(i, item) for i, item in enumerate(value)]
 
 
 if __name__ == "__main__":
     import config
-    GoogleSheets(config.LINK_URL_SHEETS).clear_table('База пользователей')
 
+    sheet = GoogleSheets(config.REGISTRY_LINK)
+    value = sheet.get_sheets_values(spreadsheets_name='Реестр', start_row='2', end_column='DC')
+    titles = sheet.get_sheets_values(spreadsheets_name='Реестр', start_row='1', end_row='1', end_column='DC')
+    sheet_data_in_dict = DictWorker.generate_dict(keys=value[0], values=value[2:])
+    filtered_data = DictWorker.filter_list_of_dicts('статус', ['разрешено'], sheet_data_in_dict)
+    filtered_data = DictWorker.filter_list_of_dicts('код', ['acad', 'ар', 'восстановление', 'комплексный',
+                                                            'появляется предупреждение', 'отсутствует объект'],
+                                                    filtered_data)
+    DictWorker.find_elements_in_dicts_list('ссылка на пикипедию', filtered_data)
+    print(filtered_data)
 
 
 
