@@ -199,8 +199,8 @@ class GoogleSheets:
                                         body={'values': values})
         request.execute()
 
-    def get_sheets_values_from_base(self, spreadsheets_name, start_row='', end_row='', start_column='A',
-                                    end_column='ZZ'):
+    def get_sheets_values(self, spreadsheets_name: str, start_row='', end_row='', start_column='A',
+                          end_column='ZZ', fields='', valueRenderOption='FORMATTED_VALUE'):
         '''
         :param spreadsheets_name:
         :param start_row: 1,2,3...N
@@ -213,31 +213,28 @@ class GoogleSheets:
 
         sheet = services_sheet.spreadsheets()
         result = sheet.values().get(spreadsheetId=self.get_sheets_from_url(),
-                                    range=f'{spreadsheets_name}!{start_column}{start_row}:{end_column}{end_row}')
+                                    range=f'{spreadsheets_name}!{start_column}{start_row}:{end_column}{end_row}',
+                                    valueRenderOption=valueRenderOption, fields=fields)
         request = result.execute()
         sheet_values = request.get('values', [])
 
         return sheet_values
 
-    @staticmethod
-    def get_dict(sheet_values, dictionary):
-        '''
-
-        :param sheet_values:
-        :param dictionary:
-        :return:
-        '''
-        base_data = []
-        for row in sheet_values:
-            new_dictionary = {key: value for key, value in dictionary.items()}
-            if row:
-                i = 0
-                for key, value in new_dictionary.items():
-                    new_dictionary[key] = row[i]
-                    i += 1
-            base_data.append(new_dictionary)
-
-        return base_data
+    def get_spreadsheet(self, spreadsheets_name, start_row='', end_row='', start_column='A',
+                                    end_column='ZZ', fields='', param=''):
+        sheet = services_sheet.spreadsheets()
+        result = sheet.get(spreadsheetId=self.get_sheets_from_url(),
+                                    ranges=f'{spreadsheets_name}!{start_column}{start_row}:{end_column}{end_row}',
+                                     fields=fields)
+        request = result.execute()
+        value = request['sheets'][0]['data'][0]['rowData']
+        values = []
+        for item in value:
+            try:
+                values.append(item['values'][0][param])
+            except KeyError:
+                values.append('Нет ссылки')
+        return values, request
 
     @staticmethod
     def get_data_from_base(element_id, base_data, dict_param):
@@ -252,6 +249,7 @@ class GoogleSheets:
             return "Данных нет в базе", id_list
 
     def add_user_in_base(self, spacial_data, user_id, user_name, spreadsheets_name, email, values):
+        assert type(user_id) is str, "Id пользователя должен быть в формате строки"
         sheet = services_sheet.spreadsheets()
         if spacial_data[0] == "Данных нет в базе":
             if 'Empty value' in spacial_data[1]:
@@ -266,33 +264,102 @@ class GoogleSheets:
                                             body={'values': [[user_id, user_name, f"{email}"]]})
             request.execute()
 
-    @staticmethod
-    def get_massive_from_dict(dict):
-        values = []
-        for key, value in dict.items():
-            values.append(dict[f'{key}'])
-        return values
-
     def add_rating_instruction(self, instruction_data, spreadsheet_name, effective):
         if instruction_data[0] == 'Данных нет в базе':
             pass
         else:
-            if not effective:
-                instruction_data[0]['rating'] = 'Отрицательная'
-            elif effective:
-                instruction_data[0]['rating'] = 'Положительная'
+            instruction_data[0]['rating'] = 'Положительная' if effective else 'Отрицательная'
             sheet = services_sheet.spreadsheets()
-            values = [self.get_massive_from_dict(instruction_data[0])]
+            values = [DictWorker.get_massive_from_dict(instruction_data[0])]
             index = instruction_data[1] + 2
             request = sheet.values().update(spreadsheetId=self.get_sheets_from_url(), range=f'{spreadsheet_name}!A{index}',
                                             valueInputOption='USER_ENTERED',
                                             body={'values': values})
             request.execute()
 
+    def clear_table(self, spreadsheet_name):
+        sheet = services_sheet.spreadsheets()
+        values = self.get_sheets_values(spreadsheet_name, start_row='2')
+        new_values = [['' for _ in item] for item in values]
+        request = sheet.values().update(spreadsheetId=self.get_sheets_from_url(),
+                                        range=f'{spreadsheet_name}!A2',
+                                        valueInputOption='USER_ENTERED',
+                                        body={'values': new_values})
+        request.execute()
+
+
+class DictWorker:
+
+    @staticmethod
+    def get_massive_from_dict(dictionary: dict):
+        return [dictionary[key] for key, value in dictionary.items()]
+
+    @staticmethod
+    def generate_dict_from_list_and_dict(data_list: list, dictionary: dict):
+
+        '''
+        :param data_list:
+        :param dictionary:
+        :return:
+        '''
+
+        assert type(dictionary) is dict, "dictionary должен быть словарем"
+        assert type(data_list) is list, 'values должен быть списком'
+        dict_list = []
+        for item in data_list:
+            new_dictionary = {key: value for key, value in dictionary.items()}
+            if item:
+                i = 0
+                for key, value in new_dictionary.items():
+                    new_dictionary[key] = item[i]
+                    i += 1
+            dict_list.append(new_dictionary)
+
+        return dict_list
+
+    @staticmethod
+    def generate_dict(keys, values):
+
+        '''
+        :param keys: list of keys [1,2,3 ... N]
+        :param values: list in list example: [[variable_1, variable_2 ... variable_N]]
+        :return: [{dict_1}, {dict_2} ... {dict_N}]
+        '''
+
+        return [{keys[i]: item for i, item in enumerate(value)} for value in values]
+
+    @staticmethod
+    def find_elements_in_dicts_list(key: str, values: list):
+
+        '''
+        :param key: string
+        :param keys: list of keys [1,2,3 ... N]
+        :param values: list in list example: [{},{},{}]
+        :return: string
+        '''
+        keys = list(values[0].keys())
+        assert key in keys, f"Ключа нет в списке доступных ключей. Доступные ключи {keys}"
+        assert type(key) is str and type(keys) is list, "Несоответсвие типов данных"
+        for item in values:
+            assert type(item) is dict, "Item должен быть с типом данных dict"
+            try:
+                print("%s, %s" % (key,item[key]))
+            except KeyError:
+                print('Такого ключа нет')
+
+    @staticmethod
+    def filter_list_of_dicts(key: str, value: str, data: list[dict]):
+        keys = list(data[0].keys())
+        assert key in keys, f"Ключа нет в списке доступных ключей. Доступные ключи {keys}"
+        assert type(key) is str and type(keys) is list, "Несоответсвие типов данных"
+        return list(filter(lambda item: item[key] == value, data))
+
 
 if __name__ == "__main__":
+    import config
+    GoogleSheets(config.LINK_URL_SHEETS).clear_table('База пользователей')
 
 
-    new_list = []
-    index = new_list.index(str(1))
-    print(new_list[2])
+
+
+

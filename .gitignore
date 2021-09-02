@@ -229,3 +229,4 @@ distutils-precedence.pth
 /_distutils_hack
 /serf
 test.py
+__pycache__
